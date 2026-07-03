@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Leverage Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
   :root{
     --green:#18A048;
@@ -193,9 +193,11 @@ const GRAY   = getComputedStyle(document.documentElement).getPropertyValue('--gr
 const GRAYD  = getComputedStyle(document.documentElement).getPropertyValue('--gray-dark').trim();
 const GRAYL  = getComputedStyle(document.documentElement).getPropertyValue('--gray-light').trim();
 
-Chart.register(ChartDataLabels);
-Chart.defaults.font.family = "'Segoe UI',Arial,sans-serif";
-Chart.defaults.plugins.datalabels.display = false;
+if (typeof Chart !== 'undefined') {
+  Chart.register(ChartDataLabels);
+  Chart.defaults.font.family = "'Segoe UI',Arial,sans-serif";
+  Chart.defaults.plugins.datalabels.display = false;
+}
 
 /* ================= HELPERS ================= */
 function sheetUrl(name){
