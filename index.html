@@ -239,6 +239,26 @@ function parseDMY(s){ // dd/MM/yyyy
   const m=String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   return m ? new Date(+m[3], +m[2]-1, +m[1]) : null;
 }
+/* gviz JSON: trả về ngày thật, không phụ thuộc định dạng hiển thị */
+async function fetchSheetJSON(name){
+  const r=await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(name)}&_=${Date.now()}`);
+  if(!r.ok) throw new Error(name+': HTTP '+r.status);
+  const t=await r.text();
+  const j=JSON.parse(t.substring(t.indexOf('{'), t.lastIndexOf('}')+1));
+  return j.table.rows.map(row=>row.c||[]);
+}
+function cellDate(c){
+  if(!c||c.v==null) return null;
+  if(typeof c.v==='string'){
+    const m=c.v.match(/Date\((\d+),(\d+),(\d+)/);
+    if(m) return new Date(+m[1],+m[2],+m[3]);
+    return parseDMY(c.v);
+  }
+  if(c.v instanceof Date) return c.v;
+  return null;
+}
+function cellNum(c){ if(!c||c.v==null) return 0; return typeof c.v==='number'?c.v:num(c.v); }
+function cellStr(c){ return c&&c.v!=null ? String(c.f!==undefined?c.f:c.v).trim() : ''; }
 function parseMDY(s){ // M/d/yyyy
   const m=String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   return m ? new Date(+m[3], +m[1]-1, +m[2]) : null;
@@ -315,9 +335,9 @@ let interestChart;
 function renderInterest(rows){
   const byDate=new Map();
   for(const r of rows){
-    const d=parseDMY(r[6]); if(!d) continue;
+    const d=cellDate(r[6]); if(!d) continue;
     const k=d.getTime();
-    byDate.set(k,(byDate.get(k)||0)+num(r[5]));
+    byDate.set(k,(byDate.get(k)||0)+cellNum(r[5]));
   }
   const pts=[...byDate.entries()].sort((a,b)=>a[0]-b[0]);
   let prevM=-1;
@@ -398,7 +418,14 @@ function renderTransTables(){
   const rows=allTrans.filter(t=>t.d.getTime()>=cutoff);
 
   const build=(side,tblId,priceCls)=>{
-    const list=rows.filter(t=>t.side===side).sort((a,b)=>b.value-a.value);
+    // gộp các lệnh trùng khách + mã + giá (giống Power BI)
+    const map=new Map();
+    for(const t of rows.filter(t=>t.side===side)){
+      const k=t.cust+'|'+t.ticker+'|'+t.price;
+      if(map.has(k)){ const m=map.get(k); m.vol+=t.vol; m.value+=t.value; }
+      else map.set(k,{...t});
+    }
+    const list=[...map.values()].sort((a,b)=>b.value-a.value);
     const tb=document.querySelector('#'+tblId+' tbody');
     tb.innerHTML=list.length?list.map(t=>`<tr>
         <td>${t.cust}</td><td>${t.ticker}</td>
@@ -416,8 +443,8 @@ function renderTransTables(){
 }
 function loadTrans(rows){
   allTrans=rows
-    .map(r=>({d:parseDMY(r[0]), cust:(r[1]||'').trim(), ticker:(r[2]||'').trim(),
-              side:(r[3]||'').trim().toUpperCase(), vol:num(r[4]), price:num(r[5]), value:num(r[6])}))
+    .map(r=>({d:cellDate(r[0]), cust:cellStr(r[1]), ticker:cellStr(r[2]),
+              side:cellStr(r[3]).toUpperCase(), vol:cellNum(r[4]), price:cellNum(r[5]), value:cellNum(r[6])}))
     .filter(t=>t.d && t.cust && t.ticker && t.ticker!=='-' && t.value>0 && (t.side==='BUY'||t.side==='SELL'));
   renderTransTables();
 }
@@ -429,8 +456,8 @@ async function loadAll(){
     fetchSheet('Khách Hàng - Nợ').then(renderCustomers),
     fetchSheet('Total Stock').then(renderStocks),
     fetchSheet('HQKD').then(renderTradeChart),
-    fetchSheet('Trans_All').then(loadTrans),
-    fetchSheet('NAV - Batch').then(renderInterest)
+    fetchSheetJSON('Trans_All').then(loadTrans),
+    fetchSheetJSON('NAV - Batch').then(renderInterest)
   ];
   const res=await Promise.allSettled(jobs);
   const errs=res.filter(r=>r.status==='rejected');
