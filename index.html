@@ -475,9 +475,10 @@ document.querySelectorAll('.tabbar button').forEach(btn=>{
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('page-'+btn.dataset.page).classList.add('active');
-    requestAnimationFrame(()=>{
-      [stocksChart,interestChart,tradeChart].forEach(c=>{ if(c){ c.resize(); c.update('none'); } });
-    });
+    const fixCharts=()=>[stocksChart,interestChart,tradeChart].forEach(c=>{ if(c){ c.resize(); c.update('none'); } });
+    requestAnimationFrame(fixCharts);
+    setTimeout(fixCharts,150);
+    setTimeout(fixCharts,400);
   });
 });
 document.getElementById('lastDays').addEventListener('change',renderTransTables);
