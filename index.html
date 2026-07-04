@@ -328,6 +328,22 @@
       <div style="position:relative;height:420px;"><canvas id="custPie"></canvas></div>
     </div>
   </div>
+
+  <h4 style="color:var(--green);margin:16px 0 8px;font-size:15px;font-weight:700;" id="cTradeTitle">Giao dịch trong ngày</h4>
+  <div class="trade-tables">
+    <div class="tbl-wrap">
+      <table id="cBuyTable">
+        <thead><tr><th>Mua</th><th>Giá</th><th>Khối lượng</th><th>Giá trị</th></tr></thead>
+        <tbody></tbody><tfoot></tfoot>
+      </table>
+    </div>
+    <div class="tbl-wrap">
+      <table id="cSellTable">
+        <thead><tr><th>Bán</th><th>Giá</th><th>Khối lượng</th><th>Giá trị</th></tr></thead>
+        <tbody></tbody><tfoot></tfoot>
+      </table>
+    </div>
+  </div>
 </div>
 
 </div><!-- /main -->
@@ -598,6 +614,7 @@ function loadTrans(rows){
               side:cellStr(r[3]).toUpperCase(), vol:cellNum(r[4]), price:cellNum(r[5]), value:cellNum(r[6])}))
     .filter(t=>t.d && t.cust && t.ticker && t.ticker!=='-' && t.value>0 && (t.side==='BUY'||t.side==='SELL'));
   renderTransTables();
+  renderCustomerPage();
 }
 
 /* ================= INSIGHT: lãi vay theo tháng (từ NAV - Batch, lãi thực tế từng ngày) ================= */
@@ -793,6 +810,8 @@ function renderCustomerPage(){
   document.querySelector('#custStockTable tfoot').innerHTML=list.length?
     `<tr><td>Total</td><td></td><td></td><td>${fmt(list.reduce((a,s)=>a+s.qty,0))}</td><td></td>
      <td class="${pnl<0?'neg':'pos'}">${fmt(list.reduce((a,s)=>a+s.pnl,0))}</td><td></td></tr>`:'';
+  /* giao dịch trong ngày của khách (từ Trans_All, ngày gần nhất) */
+  renderCustTrades(name);
   /* pie */
   const shades=['#18A048','#5DC389','#0E7A35','#9ADBB4','#3AB268','#C8ECD6','#26935A','#7FCF9F'];
   const ctx=document.getElementById('custPie');
@@ -805,6 +824,29 @@ function renderCustomerPage(){
         datalabels:{display:true,color:'#fff',font:{size:11.5,weight:700},
           formatter:(v,c)=>{const tot=c.dataset.data.reduce((a,b)=>a+b,0);return tot?c.chart.data.labels[c.dataIndex]+'\n'+(v/tot*100).toFixed(1)+'%':'';}}}}};
   if(custPie){custPie.data=cfg.data;custPie.update();}else custPie=new Chart(ctx,cfg);
+}
+function renderCustTrades(name){
+  const buyT=document.querySelector('#cBuyTable tbody'), sellT=document.querySelector('#cSellTable tbody');
+  if(!allTrans.length){ buyT.innerHTML=sellT.innerHTML='<tr><td colspan="4" style="text-align:center;color:#999;">Đang tải…</td></tr>'; return; }
+  const maxT=Math.max(...allTrans.map(t=>t.d.getTime()));
+  document.getElementById('cTradeTitle').textContent='Giao dịch trong ngày '+new Date(maxT).toLocaleDateString('vi-VN');
+  const rows=allTrans.filter(t=>t.cust===name&&t.d.getTime()===maxT);
+  const build=(side,tbl,cls)=>{
+    const map=new Map();
+    for(const t of rows.filter(t=>t.side===side)){
+      const k=t.ticker+'|'+t.price;
+      if(map.has(k)){const m=map.get(k);m.vol+=t.vol;m.value+=t.value;} else map.set(k,{...t});
+    }
+    const list=[...map.values()].sort((a,b)=>b.value-a.value);
+    document.querySelector('#'+tbl+' tbody').innerHTML=list.length?list.map(t=>`<tr>
+      <td style="font-weight:600;">${t.ticker}</td><td class="${cls}">${fmt(t.price)}</td>
+      <td>${fmt(t.vol)}</td><td>${fmt(t.value)}</td></tr>`).join('')
+      :'<tr><td colspan="4" style="text-align:center;color:#999;">Không có lệnh</td></tr>';
+    document.querySelector('#'+tbl+' tfoot').innerHTML=list.length?
+      `<tr><td>Total</td><td></td><td>${fmt(list.reduce((a,t)=>a+t.vol,0))}</td><td>${fmt(list.reduce((a,t)=>a+t.value,0))}</td></tr>`:'';
+  };
+  build('BUY','cBuyTable','price-buy');
+  build('SELL','cSellTable','price-sell');
 }
 document.getElementById('custSel').addEventListener('change',renderCustomerPage);
 
