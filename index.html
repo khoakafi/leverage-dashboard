@@ -539,34 +539,10 @@ function renderInsight(rows){
     deals.push({cust,buyDate,buyVal,on:cellStr(r[10]).toUpperCase()==='ON',
       sellDate:cellDate(r[11]),days:cellNum(r[21]),interest:cellNum(r[23]),pnl:cellNum(r[24])});
   }
-  /* KPI */
-  const totInt=deals.reduce((a,d)=>a+d.interest,0);
-  const now=new Date(), curKey=now.getFullYear()+'-'+(now.getMonth()+1);
-  const mAgg={};
-  for(const d of deals){const k=d.buyDate.getFullYear()+'-'+(d.buyDate.getMonth()+1);
-    mAgg[k]=(mAgg[k]||0)+d.interest;}
+  /* KPI deal đang mở */
   const open=deals.filter(d=>d.on);
-  document.getElementById('insTotal').textContent=fmt(totInt);
-  document.getElementById('insTotalSub').innerHTML=`<span style="color:#888;font-weight:400;">${deals.length} deals</span>`;
-  document.getElementById('insMonth').textContent=fmt(mAgg[curKey]||0);
-  const prev=new Date(now.getFullYear(),now.getMonth()-1,1), pKey=prev.getFullYear()+'-'+(prev.getMonth()+1);
-  document.getElementById('insMonthSub').innerHTML=deltaHtml((mAgg[curKey]||0)-(mAgg[pKey]||0));
   document.getElementById('insOpen').textContent=open.length;
   document.getElementById('insOpenSub').innerHTML=`<span style="color:#888;font-weight:400;">${fmt(open.reduce((a,d)=>a+d.buyVal,0))}</span>`;
-  /* monthly revenue chart */
-  const keys=Object.keys(mAgg).sort((a,b)=>{const[x,y]=a.split('-').map(Number),[u,v]=b.split('-').map(Number);return x-u||y-v;});
-  const ctx=document.getElementById('revChart');
-  const cfg={type:'bar',
-    data:{labels:keys.map(k=>{const[y,m]=k.split('-');return MONTHS[m-1]+' '+y;}),
-      datasets:[{data:keys.map(k=>mAgg[k]),backgroundColor:GREEN,barPercentage:.62}]},
-    options:{maintainAspectRatio:false,responsive:true,layout:{padding:{top:16}},
-      scales:{x:{grid:{display:false},border:{display:false},ticks:{color:'#666',font:{size:10.5},maxRotation:0,autoSkip:true}},
-        y:{grid:{color:'#F0F0F0'},border:{display:false},ticks:{color:'#666',font:{size:11},callback:v=>(v/1e6)+'tr'}}},
-      plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:c=>fmt(c.raw)}},
-        datalabels:{display:true,anchor:'end',align:'end',offset:-2,color:'#555',font:{size:9.5},
-          formatter:v=>Math.round(v/1e6)+'tr'}}}};
-  if(revChart){revChart.data=cfg.data;revChart.update();}else revChart=new Chart(ctx,cfg);
   /* customer ranking */
   const cAgg={};
   for(const d of deals){const o=cAgg[d.cust]=cAgg[d.cust]||{deals:0,buy:0,int:0,pnl:0,win:0,closed:0,days:0,onCnt:0,onVal:0};
