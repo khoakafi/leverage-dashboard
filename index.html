@@ -23,23 +23,38 @@
   body{
     font-family:'Segoe UI','Segoe UI Web (West European)',-apple-system,Roboto,Arial,sans-serif;
     background:var(--bg);color:var(--text);font-size:13px;
-    display:flex;flex-direction:column;height:100vh;overflow:hidden;
+    display:flex;flex-direction:row;height:100vh;overflow:hidden;
   }
-  /* ===== pages ===== */
-  .page{flex:1;overflow:auto;padding:12px 16px 8px;display:none;}
-  .page.active{display:block;}
-  /* ===== bottom tab bar (Power BI style) ===== */
-  .tabbar{
-    flex:none;display:flex;align-items:center;gap:2px;
-    border-top:1px solid var(--gray-light);background:#fff;padding:0 10px;height:40px;
+  /* ===== sidebar ===== */
+  .sidebar{
+    flex:none;width:212px;height:100%;background:#fff;
+    border-right:1px solid #EDEDED;display:flex;flex-direction:column;
+    padding:18px 14px;
   }
-  .tabbar button{
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:26px;padding:0 4px;}
+  .brand .logo{
+    width:38px;height:38px;border-radius:10px;background:var(--green);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:700;
+  }
+  .brand .t1{font-size:14.5px;font-weight:700;line-height:1.2;}
+  .brand .t2{font-size:11px;color:#8a8a8a;}
+  .nav{display:flex;flex-direction:column;gap:6px;}
+  .nav button{
+    display:flex;align-items:center;gap:11px;width:100%;
     border:none;background:none;font:inherit;font-size:13.5px;color:#555;
-    padding:10px 18px;cursor:pointer;border-bottom:3px solid transparent;
+    padding:10px 12px;cursor:pointer;border-radius:9px;text-align:left;
   }
-  .tabbar button.active{color:var(--text);font-weight:600;border-bottom-color:var(--green);}
-  .updated{margin-left:auto;font-size:11px;color:#888;}
-  .updated a{color:#888;}
+  .nav button .ic{
+    width:16px;height:16px;border-radius:5px;border:1.5px solid #D5D5D5;background:#fff;flex:none;
+  }
+  .nav button.active{background:#E9F6EE;color:var(--green-dark);font-weight:700;}
+  .nav button.active .ic{background:var(--green);border-color:var(--green);}
+  .nav button:hover:not(.active){background:#F5F5F5;}
+  .updated{margin-top:auto;font-size:10.5px;color:#999;padding:0 4px;line-height:1.5;}
+  /* ===== main + pages ===== */
+  .main{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;}
+  .page{flex:1;overflow:auto;padding:14px 18px 10px;display:none;}
+  .page.active{display:block;}
   /* ===== KPI cards ===== */
   .cards{display:flex;gap:24px;margin-bottom:14px;}
   .card{
@@ -116,6 +131,20 @@
   </div>
 </div>
 
+<div class="sidebar">
+  <div class="brand">
+    <div class="logo">L</div>
+    <div><div class="t1">Leverage</div><div class="t2">Quản lý cho vay</div></div>
+  </div>
+  <div class="nav">
+    <button class="active" data-page="overview"><span class="ic"></span>Tổng quan</button>
+    <button data-page="performance"><span class="ic"></span>Giao dịch</button>
+    <button data-page="insight"><span class="ic"></span>Insight</button>
+  </div>
+  <span class="updated" id="updated"></span>
+</div>
+
+<div class="main">
 <div class="page active" id="page-overview">
   <div class="cards">
     <div class="card"><h3>Total Margin</h3><div class="big" id="kpiMargin">–</div><div class="delta" id="kpiMarginD"></div></div>
@@ -202,12 +231,7 @@
   </div>
 </div>
 
-<div class="tabbar">
-  <button class="active" data-page="overview">Overview</button>
-  <button data-page="performance">Performance</button>
-  <button data-page="insight">Insight</button>
-  <span class="updated" id="updated"></span>
-</div>
+</div><!-- /main -->
 
 <script>
 /* ================= CONFIG ================= */
@@ -554,9 +578,9 @@ async function loadAll(){
 }
 
 /* ================= UI ================= */
-document.querySelectorAll('.tabbar button').forEach(btn=>{
+document.querySelectorAll('.nav button').forEach(btn=>{
   btn.addEventListener('click',()=>{
-    document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('page-'+btn.dataset.page).classList.add('active');
