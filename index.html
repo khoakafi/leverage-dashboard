@@ -287,15 +287,25 @@
         <div class="lbl">Tài Sản Ròng</div>
         <div class="val" id="cNav">–</div>
       </div>
+      <div class="tbl-wrap" style="margin-top:10px;">
+        <table>
+          <thead><tr><th style="text-align:left;">Dư Nợ</th><th style="text-align:center;">Tỷ Lệ</th><th>Sức Mua (*5)</th></tr></thead>
+          <tbody><tr style="background:#EAF6EF;">
+            <td style="font-weight:700;color:var(--green-dark);font-size:14.5px;" id="cDebt">–</td>
+            <td style="text-align:center;font-weight:700;font-size:14.5px;" id="cRate">–</td>
+            <td style="font-weight:700;font-size:14.5px;" id="cBuyPower">–</td>
+          </tr></tbody>
+        </table>
+      </div>
       <div style="background:#fff;box-shadow:var(--card-shadow);border-radius:2px;margin-top:10px;">
-        <div class="stat-row"><span class="lbl">Dư Nợ</span><span class="val" style="color:var(--green)" id="cDebt">–</span></div>
-        <div class="stat-row"><span class="lbl">Lãi/Lỗ Hiện Tại<small>(Bao gồm phí bán + lãi margin)</small></span><span class="val" id="cPnl">–</span></div>
-        <div class="stat-row"><span class="lbl">Lãi vay lũy kế (deal đang mở)</span><span class="val" id="cInt">–</span></div>
+        <div class="stat-row"><span class="lbl">Lãi/Lỗ Hiện Tại<small>(Bao gồm phí bán + margin)</small></span><span class="val" id="cPnl">–</span></div>
+        <div class="stat-row"><span class="lbl">Lãi/Lỗ Hôm nay</span><span class="val" id="cToday">–</span></div>
+        <div class="stat-row"><span class="lbl">Tổng Vốn</span><span class="val" id="cCap">–</span></div>
         <div class="stat-row"><span class="lbl">Tổng Giá Trị Thị Trường</span><span class="val" id="cMkt">–</span></div>
       </div>
       <div class="tbl-wrap" style="margin-top:10px;max-height:38vh;">
         <table id="custStockTable">
-          <thead><tr><th>Mã CP</th><th>Giá Vốn</th><th>Giá TT</th><th>KL</th><th>Giá trị TT</th><th>Lãi/lỗ</th><th>%</th></tr></thead>
+          <thead><tr><th>Mã CP</th><th>Giá Vốn</th><th>Giá TT</th><th>KL</th><th>KLKD</th><th>Lãi/lỗ</th><th>Phần trăm (%)</th></tr></thead>
           <tbody><tr><td colspan="7" class="loading">Đang tải…</td></tr></tbody>
           <tfoot></tfoot>
         </table>
@@ -612,10 +622,11 @@ function renderInsight(rows){
     const cust=cellStr(r[1]), buyDate=cellDate(r[2]), ticker=cellStr(r[6]);
     if(!cust||!buyDate) continue;
     if(cellStr(r[10]).toUpperCase()==='ON'){
-      custRows.push({cust, ticker:(ticker&&ticker!=='-')?ticker:null,
+      custRows.push({cust, buyDate, ticker:(ticker&&ticker!=='-')?ticker:null,
         qty:cellNum(r[8]), price:cellNum(r[7]), buyVal:cellNum(r[9]),
-        debtNow:cellNum(r[20]), pnlNow:cellNum(r[25]),
-        cur:cellNum(r[27])||cellNum(r[28]), interest:cellNum(r[23])});
+        debtNow:cellNum(r[20]), pnlY:cellNum(r[24]), capIn:cellNum(r[3]),
+        cur:cellNum(r[27])||cellNum(r[28]), interest:cellNum(r[23]),
+        short:cellStr(r[29]).toLowerCase()==='short'});
     }
     if(!ticker||ticker==='-') continue;
     const buyVal=cellNum(r[9]); if(buyVal<=0) continue;
@@ -693,39 +704,87 @@ function setupCustomerPage(rows){
   if(prev&&names.includes(prev)) sel.value=prev;
   renderCustomerPage();
 }
+let __nrt=null, __ced=null;
+function loadNRT(rows){ // NAV - Real Time, khối trái cột A-G
+  __nrt={};
+  for(const r of rows){
+    const n=cellStr(r[0]);
+    if(!n||n==='Khách Hàng'||n==='dạ') continue;
+    __nrt[n]={nav:cellNum(r[1]), debt:cellNum(r[3]), dailyInt:cellNum(r[5]), rate:cellStr(r[6])};
+  }
+  renderCustomerPage();
+}
+function loadCED(rows){ // Check End day, dòng 5-27: B=tên, K=giá trị
+  __ced={};
+  for(let i=3;i<Math.min(rows.length,27);i++){
+    const n=cellStr(rows[i][1]);
+    if(n&&n!=='Tên KH'&&n!=='TỔNG') __ced[n]=cellNum(rows[i][10]);
+  }
+  renderCustomerPage();
+}
+function prevWorkday(){ // WORKDAY.INTL(NOW()-0.5,-1,"0000011")
+  const d=new Date(); if(d.getHours()<12) d.setDate(d.getDate()-1);
+  do{ d.setDate(d.getDate()-1); }while(d.getDay()===0||d.getDay()===6);
+  d.setHours(0,0,0,0); return d;
+}
 function renderCustomerPage(){
   const name=document.getElementById('custSel').value;
+  if(!name) return;
   const rows=__custRows.filter(r=>r.cust===name);
+  const pw=prevWorkday();
   const stocks={};
   for(const r of rows.filter(r=>r.ticker&&r.qty>0)){
-    const o=stocks[r.ticker]=stocks[r.ticker]||{qty:0,cost:0,buyVal:0,cur:0,pnl:0};
-    o.qty+=r.qty; o.cost+=r.price*r.qty; o.buyVal+=r.buyVal; o.pnl+=r.pnlNow;
+    const o=stocks[r.ticker]=stocks[r.ticker]||{qty:0,buyVal:0,cur:0,avail:0,short:false};
+    o.qty+=r.qty; o.buyVal+=r.buyVal;
     if(r.cur) o.cur=r.cur;
+    if(r.short) o.short=true;
+    if(r.buyDate<pw) o.avail+=r.qty;
   }
-  const list=Object.entries(stocks).map(([t,o])=>({t, qty:o.qty, avg:o.cost/o.qty, cur:o.cur,
-    mkt:o.cur*o.qty, pnl:o.pnl, pct:o.buyVal?o.pnl/o.buyVal:0})).sort((a,b)=>b.mkt-a.mkt);
-  const debt=rows.reduce((a,r)=>a+r.debtNow,0);
-  const pnl=rows.filter(r=>r.ticker).reduce((a,r)=>a+r.pnlNow,0);
-  const intr=rows.filter(r=>r.ticker).reduce((a,r)=>a+r.interest,0);
+  const list=Object.entries(stocks).map(([t,o])=>{
+    const avg=o.buyVal/o.qty; // giá vốn gồm phí (như C16 = SUMIFS J / KL)
+    const pnl=o.short?(avg-o.cur)*o.qty:(o.cur-avg)*o.qty;
+    return {t, qty:o.qty, avail:o.avail, avg, cur:o.cur, mkt:o.cur*o.qty,
+      pnl, pct:o.buyVal?pnl/o.buyVal:0, short:o.short};
+  }).sort((a,b)=>b.mkt-a.mkt);
   const mkt=list.reduce((a,s)=>a+s.mkt,0);
-  const nav=mkt-debt;
-  const set=(id,v,color)=>{const e=document.getElementById(id);e.textContent=fmt(v);
-    if(color)e.style.color=v<0?'var(--red)':'var(--green)';};
-  document.getElementById('cNav').textContent=fmt(nav);
-  document.getElementById('cNav').style.color=nav<0?'var(--red)':'var(--text)';
-  set('cDebt',debt); set('cPnl',pnl,true); set('cInt',intr);
-  document.getElementById('cInt').style.color='var(--text)';
-  document.getElementById('cMkt').textContent=fmt(mkt);
+  const pnl=rows.filter(r=>r.ticker).reduce((a,r)=>a+r.pnlY,0);          // Key in!Y, ON
+  const cap=rows.reduce((a,r)=>a+r.buyVal,0);                            // SUMIFS Key in!J, ON
+  const nrt=__nrt&&__nrt[name];
+  const nav=nrt?nrt.nav:mkt-rows.reduce((a,r)=>a+r.debtNow,0);
+  const debt=nrt?nrt.debt:rows.reduce((a,r)=>a+r.debtNow,0);
+  const rate=nrt?nrt.rate:'–';
+  const base=nav-0.2*mkt;
+  const buyPower=base<0?base:base*5;
+  /* Lãi/Lỗ hôm nay = NAV realtime + lãi vay ngày + Check End day!K − vốn nộp hôm nay */
+  let today=null;
+  if(nrt&&__ced){
+    const t0=new Date(); t0.setHours(0,0,0,0);
+    const depToday=__custRows.filter(r=>r.cust===name&&!r.ticker&&r.capIn&&r.buyDate&&r.buyDate.getTime()===t0.getTime())
+      .reduce((a,r)=>a+r.capIn,0);
+    today=nrt.nav+(__nrt[name].dailyInt||0)+(__ced[name]||0)-depToday;
+  }
+  const el=id=>document.getElementById(id);
+  el('cNav').textContent=fmt(nav); el('cNav').style.color=nav<0?'var(--red)':'var(--text)';
+  el('cDebt').textContent=fmt(debt);
+  el('cRate').textContent=rate;
+  el('cBuyPower').textContent=fmt(buyPower); el('cBuyPower').style.color=buyPower<0?'var(--red)':'var(--text)';
+  el('cPnl').textContent=fmt(pnl); el('cPnl').style.color=pnl<0?'var(--red)':'var(--green)';
+  el('cToday').textContent=today==null?'–':fmt(today);
+  el('cToday').style.color=today!=null&&today<0?'var(--red)':'var(--text)';
+  el('cCap').textContent=fmt(cap);
+  el('cMkt').textContent=fmt(mkt);
   /* bảng mã */
+  const k=v=>(v/1000).toFixed(2); // hiển thị giá theo nghìn như design
   document.querySelector('#custStockTable tbody').innerHTML=list.length?list.map(s=>`<tr>
-    <td style="font-weight:600;">${s.t}</td><td>${fmt(s.avg)}</td><td>${fmt(s.cur)}</td>
-    <td>${fmt(s.qty)}</td><td>${fmt(s.mkt)}</td>
+    <td style="font-weight:600;">${s.t}${s.short?' <span style="color:var(--red);font-size:10px;">SHORT</span>':''}</td>
+    <td>${k(s.avg)}</td><td>${k(s.cur)}</td>
+    <td>${fmt(s.qty)}</td><td>${s.avail?fmt(s.avail):'<span style="color:#999;">Chờ về</span>'}</td>
     <td class="${s.pnl<0?'neg':'pos'}" style="font-weight:600;">${fmt(s.pnl)}</td>
     <td class="${s.pnl<0?'neg':'pos'}">${(s.pct*100).toFixed(2)}%</td></tr>`).join('')
     :'<tr><td colspan="7" style="text-align:center;color:#999;">Không có mã đang cầm</td></tr>';
   document.querySelector('#custStockTable tfoot').innerHTML=list.length?
-    `<tr><td>Total</td><td></td><td></td><td>${fmt(list.reduce((a,s)=>a+s.qty,0))}</td>
-     <td>${fmt(mkt)}</td><td class="${pnl<0?'neg':'pos'}">${fmt(list.reduce((a,s)=>a+s.pnl,0))}</td><td></td></tr>`:'';
+    `<tr><td>Total</td><td></td><td></td><td>${fmt(list.reduce((a,s)=>a+s.qty,0))}</td><td></td>
+     <td class="${pnl<0?'neg':'pos'}">${fmt(list.reduce((a,s)=>a+s.pnl,0))}</td><td></td></tr>`:'';
   /* pie */
   const shades=['#18A048','#5DC389','#0E7A35','#9ADBB4','#3AB268','#C8ECD6','#26935A','#7FCF9F'];
   const ctx=document.getElementById('custPie');
@@ -750,7 +809,9 @@ async function loadAll(){
     fetchSheet('HQKD').then(renderTradeChart),
     fetchSheetJSON('Trans_All').then(loadTrans),
     fetchSheetJSON('NAV - Batch').then(renderInterest),
-    fetchSheetJSON('Key in').then(renderInsight)
+    fetchSheetJSON('Key in').then(renderInsight),
+    fetchSheetJSON('NAV - Real Time').then(loadNRT),
+    fetchSheetJSON('Check End day').then(loadCED)
   ];
   const res=await Promise.allSettled(jobs);
   const errs=res.filter(r=>r.status==='rejected');
