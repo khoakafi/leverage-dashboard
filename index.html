@@ -176,9 +176,36 @@
   </div>
 </div>
 
+<div class="page" id="page-insight">
+  <div class="cards">
+    <div class="card"><h3>Lãi vay lũy kế</h3><div class="big" id="insTotal">–</div><div class="delta" id="insTotalSub"></div></div>
+    <div class="card"><h3>Lãi vay tháng này</h3><div class="big" id="insMonth">–</div><div class="delta" id="insMonthSub"></div></div>
+    <div class="card"><h3>Deal đang mở</h3><div class="big" id="insOpen">–</div><div class="delta" id="insOpenSub"></div></div>
+  </div>
+
+  <div class="charts" style="margin-top:0;">
+    <div class="chart-box" style="flex:1;min-width:0;">
+      <h4>Lãi vay thu được theo tháng</h4>
+      <div class="chart-holder" style="height:250px;"><canvas id="revChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:12px;max-height:340px;">
+    <table id="rankTable">
+      <thead><tr>
+        <th>Khách Hàng</th><th>Deals</th><th>Tổng mua</th><th>Lãi vay đem lại</th>
+        <th>Khách lời/lỗ</th><th>Win rate</th><th>Ngày vay TB</th><th>Deal mở</th>
+      </tr></thead>
+      <tbody><tr><td colspan="8" class="loading">Đang tải dữ liệu…</td></tr></tbody>
+      <tfoot></tfoot>
+    </table>
+  </div>
+</div>
+
 <div class="tabbar">
   <button class="active" data-page="overview">Overview</button>
   <button data-page="performance">Performance</button>
+  <button data-page="insight">Insight</button>
   <span class="updated" id="updated"></span>
 </div>
 
@@ -449,6 +476,63 @@ function loadTrans(rows){
   renderTransTables();
 }
 
+/* ================= INSIGHT (Key in) ================= */
+let revChart;
+function renderInsight(rows){
+  const deals=[];
+  for(let i=2;i<rows.length;i++){const r=rows[i];
+    const cust=cellStr(r[1]), buyDate=cellDate(r[2]), ticker=cellStr(r[6]);
+    if(!cust||!buyDate||!ticker||ticker==='-') continue;
+    const buyVal=cellNum(r[9]); if(buyVal<=0) continue;
+    deals.push({cust,buyDate,buyVal,on:cellStr(r[10]).toUpperCase()==='ON',
+      sellDate:cellDate(r[11]),days:cellNum(r[21]),interest:cellNum(r[23]),pnl:cellNum(r[24])});
+  }
+  /* KPI */
+  const totInt=deals.reduce((a,d)=>a+d.interest,0);
+  const now=new Date(), curKey=now.getFullYear()+'-'+(now.getMonth()+1);
+  const mAgg={};
+  for(const d of deals){const k=d.buyDate.getFullYear()+'-'+(d.buyDate.getMonth()+1);
+    mAgg[k]=(mAgg[k]||0)+d.interest;}
+  const open=deals.filter(d=>d.on);
+  document.getElementById('insTotal').textContent=fmt(totInt);
+  document.getElementById('insTotalSub').innerHTML=`<span style="color:#888;font-weight:400;">${deals.length} deals</span>`;
+  document.getElementById('insMonth').textContent=fmt(mAgg[curKey]||0);
+  const prev=new Date(now.getFullYear(),now.getMonth()-1,1), pKey=prev.getFullYear()+'-'+(prev.getMonth()+1);
+  document.getElementById('insMonthSub').innerHTML=deltaHtml((mAgg[curKey]||0)-(mAgg[pKey]||0));
+  document.getElementById('insOpen').textContent=open.length;
+  document.getElementById('insOpenSub').innerHTML=`<span style="color:#888;font-weight:400;">${fmt(open.reduce((a,d)=>a+d.buyVal,0))}</span>`;
+  /* monthly revenue chart */
+  const keys=Object.keys(mAgg).sort((a,b)=>{const[x,y]=a.split('-').map(Number),[u,v]=b.split('-').map(Number);return x-u||y-v;});
+  const ctx=document.getElementById('revChart');
+  const cfg={type:'bar',
+    data:{labels:keys.map(k=>{const[y,m]=k.split('-');return MONTHS[m-1]+' '+y;}),
+      datasets:[{data:keys.map(k=>mAgg[k]),backgroundColor:GREEN,barPercentage:.62}]},
+    options:{maintainAspectRatio:false,responsive:true,layout:{padding:{top:16}},
+      scales:{x:{grid:{display:false},border:{display:false},ticks:{color:'#666',font:{size:10.5},maxRotation:0,autoSkip:true}},
+        y:{grid:{color:'#F0F0F0'},border:{display:false},ticks:{color:'#666',font:{size:11},callback:v=>(v/1e6)+'tr'}}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>fmt(c.raw)}},
+        datalabels:{display:true,anchor:'end',align:'end',offset:-2,color:'#555',font:{size:9.5},
+          formatter:v=>Math.round(v/1e6)+'tr'}}}};
+  if(revChart){revChart.data=cfg.data;revChart.update();}else revChart=new Chart(ctx,cfg);
+  /* customer ranking */
+  const cAgg={};
+  for(const d of deals){const o=cAgg[d.cust]=cAgg[d.cust]||{deals:0,buy:0,int:0,pnl:0,win:0,closed:0,days:0,onCnt:0,onVal:0};
+    o.deals++;o.buy+=d.buyVal;o.int+=d.interest;
+    if(d.on){o.onCnt++;o.onVal+=d.buyVal;}
+    if(d.sellDate){o.closed++;o.pnl+=d.pnl;o.days+=d.days;if(d.pnl>0)o.win++;}}
+  const list=Object.entries(cAgg).map(([k,o])=>({k,...o,winRate:o.closed?Math.round(o.win/o.closed*100):null,
+    avgD:o.closed?Math.round(o.days/o.closed):0})).sort((a,b)=>b.int-a.int);
+  const winHtml=w=>w==null?'<span style="color:#999">–</span>':`<span style="color:${w<40?'var(--red)':w>=60?'var(--green)':'#555'};font-weight:600;">${w}%</span>`;
+  document.querySelector('#rankTable tbody').innerHTML=list.map(o=>`<tr>
+    <td>${o.k}</td><td>${o.deals}</td><td>${fmt(o.buy)}</td><td style="font-weight:600;color:var(--green)">${fmt(o.int)}</td>
+    <td>${deltaHtml(Math.round(o.pnl))}</td><td>${winHtml(o.winRate)}</td><td>${o.avgD}</td>
+    <td>${o.onCnt?o.onCnt+' ('+fmt(o.onVal)+')':''}</td></tr>`).join('');
+  const T=list.reduce((a,o)=>({deals:a.deals+o.deals,buy:a.buy+o.buy,int:a.int+o.int,pnl:a.pnl+o.pnl,onCnt:a.onCnt+o.onCnt,onVal:a.onVal+o.onVal}),{deals:0,buy:0,int:0,pnl:0,onCnt:0,onVal:0});
+  document.querySelector('#rankTable tfoot').innerHTML=
+    `<tr><td>Total</td><td>${T.deals}</td><td>${fmt(T.buy)}</td><td>${fmt(T.int)}</td><td>${deltaHtml(Math.round(T.pnl))}</td><td></td><td></td><td>${T.onCnt} (${fmt(T.onVal)})</td></tr>`;
+}
+
 /* ================= LOAD ALL ================= */
 async function loadAll(){
   const jobs=[
@@ -457,7 +541,8 @@ async function loadAll(){
     fetchSheet('Total Stock').then(renderStocks),
     fetchSheet('HQKD').then(renderTradeChart),
     fetchSheetJSON('Trans_All').then(loadTrans),
-    fetchSheetJSON('NAV - Batch').then(renderInterest)
+    fetchSheetJSON('NAV - Batch').then(renderInterest),
+    fetchSheetJSON('Key in').then(renderInsight)
   ];
   const res=await Promise.allSettled(jobs);
   const errs=res.filter(r=>r.status==='rejected');
@@ -475,7 +560,7 @@ document.querySelectorAll('.tabbar button').forEach(btn=>{
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('page-'+btn.dataset.page).classList.add('active');
-    const fixCharts=()=>[stocksChart,interestChart,tradeChart].forEach(c=>{ if(c){ c.resize(); c.update('none'); } });
+    const fixCharts=()=>[stocksChart,interestChart,tradeChart,revChart].forEach(c=>{ if(c){ c.resize(); c.update('none'); } });
     requestAnimationFrame(fixCharts);
     setTimeout(fixCharts,150);
     setTimeout(fixCharts,400);
