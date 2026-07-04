@@ -29,8 +29,20 @@
   .sidebar{
     flex:none;width:212px;height:100%;background:#fff;
     border-right:1px solid #EDEDED;display:flex;flex-direction:column;
-    padding:18px 14px;
+    padding:18px 14px;position:relative;transition:width .18s ease;
   }
+  #sbToggle{
+    position:absolute;top:16px;right:-13px;z-index:20;
+    width:26px;height:26px;border-radius:50%;border:1px solid #DDD;background:#fff;
+    color:#666;font-size:13px;line-height:1;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15);
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  #sbToggle:hover{background:#F2FBF5;color:var(--green);}
+  .sidebar.collapsed{width:60px;padding:18px 10px;}
+  .sidebar.collapsed .brand .t1,.sidebar.collapsed .brand .t2,
+  .sidebar.collapsed .nav .txt,.sidebar.collapsed .updated{display:none;}
+  .sidebar.collapsed .brand{justify-content:center;}
+  .sidebar.collapsed .nav button{justify-content:center;padding:11px 0;}
   .brand{display:flex;align-items:center;gap:10px;margin-bottom:26px;padding:0 4px;}
   .brand .logo{
     width:38px;height:38px;border-radius:10px;background:var(--green);
@@ -157,17 +169,18 @@
   </div>
 </div>
 
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
+  <button id="sbToggle" title="Thu gọn / mở rộng">‹</button>
   <div class="brand">
     <div class="logo">L</div>
     <div><div class="t1">Leverage</div><div class="t2">Quản lý cho vay</div></div>
   </div>
   <div class="nav">
-    <button class="active" data-page="overview"><span class="ic"></span>Tổng quan</button>
-    <button data-page="performance"><span class="ic"></span>Giao dịch</button>
-    <button data-page="insight"><span class="ic"></span>Insight</button>
-    <button data-page="holdings"><span class="ic"></span>Tồn kho</button>
-    <button data-page="customer"><span class="ic"></span>Khách hàng</button>
+    <button class="active" data-page="overview"><span class="ic"></span><span class="txt">Tổng quan</span></button>
+    <button data-page="performance"><span class="ic"></span><span class="txt">Giao dịch</span></button>
+    <button data-page="insight"><span class="ic"></span><span class="txt">Insight</span></button>
+    <button data-page="holdings"><span class="ic"></span><span class="txt">Tồn kho</span></button>
+    <button data-page="customer"><span class="ic"></span><span class="txt">Khách hàng</span></button>
   </div>
   <span class="updated" id="updated"></span>
 </div>
@@ -824,13 +837,24 @@ document.querySelectorAll('.nav button').forEach(btn=>{
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('page-'+btn.dataset.page).classList.add('active');
-    const fixCharts=()=>[stocksChart,interestChart,tradeChart,revChart,custPie].forEach(c=>{ if(c){ c.resize(); c.update('none'); } });
-    requestAnimationFrame(fixCharts);
-    setTimeout(fixCharts,150);
-    setTimeout(fixCharts,400);
+    requestAnimationFrame(fixChartsAll);
+    setTimeout(fixChartsAll,150);
+    setTimeout(fixChartsAll,400);
   });
 });
 document.getElementById('lastDays').addEventListener('change',renderTransTables);
+
+function fixChartsAll(){
+  [stocksChart,interestChart,tradeChart,revChart,custPie].forEach(c=>{ if(c){ c.resize(); c.update('none'); } });
+}
+/* thu gọn / mở rộng sidebar */
+document.getElementById('sbToggle').addEventListener('click',()=>{
+  const sb=document.getElementById('sidebar');
+  sb.classList.toggle('collapsed');
+  document.getElementById('sbToggle').textContent=sb.classList.contains('collapsed')?'›':'‹';
+  setTimeout(fixChartsAll,200);
+  setTimeout(fixChartsAll,450);
+});
 
 /* ================= PASSWORD GATE ================= */
 const PW_HASH='ac39da70858827da7a5f32f1239148864fada952433cb7c07051e6dbdeec893c';
