@@ -118,6 +118,14 @@
     background:var(--green);color:#fff;border:none;border-radius:3px;cursor:pointer;
   }
   #gate .err{color:var(--red);font-size:12.5px;margin-top:8px;min-height:16px;}
+  /* ===== holdings matrix ===== */
+  #holdTable td{text-align:right;font-size:12.5px;padding:4px 10px;}
+  #holdTable td:first-child,#holdTable tfoot td:first-child{
+    position:sticky;left:0;background:#fff;z-index:1;font-weight:600;text-align:left;
+  }
+  #holdTable thead th:first-child{position:sticky;left:0;z-index:3;}
+  #holdTable thead th{text-align:center;}
+  #holdTable td:not(:first-child){text-align:center;min-width:70px;}
 </style>
 </head>
 <body>
@@ -140,6 +148,7 @@
     <button class="active" data-page="overview"><span class="ic"></span>Tổng quan</button>
     <button data-page="performance"><span class="ic"></span>Giao dịch</button>
     <button data-page="insight"><span class="ic"></span>Insight</button>
+    <button data-page="holdings"><span class="ic"></span>Tồn kho</button>
   </div>
   <span class="updated" id="updated"></span>
 </div>
@@ -226,6 +235,26 @@
         <th>Khách lời/lỗ</th><th>Win rate</th><th>Ngày vay TB</th><th>Deal mở</th>
       </tr></thead>
       <tbody><tr><td colspan="8" class="loading">Đang tải dữ liệu…</td></tr></tbody>
+      <tfoot></tfoot>
+    </table>
+  </div>
+</div>
+
+<div class="page" id="page-holdings">
+  <h4 style="color:var(--green);margin:2px 0 8px;font-size:15px;font-weight:700;">Số lượng cổ phiếu khách đang cầm (deal ON)</h4>
+  <div class="tbl-wrap" style="max-height:52vh;">
+    <table id="holdTable">
+      <thead></thead>
+      <tbody><tr><td class="loading">Đang tải dữ liệu…</td></tr></tbody>
+      <tfoot></tfoot>
+    </table>
+  </div>
+
+  <h4 style="color:var(--red);margin:16px 0 8px;font-size:15px;font-weight:700;">⚠ Deal có dư nợ lãi vay trên 85 ngày</h4>
+  <div class="tbl-wrap" style="max-height:34vh;">
+    <table id="oldDealTable">
+      <thead><tr><th>Khách Hàng</th><th>Mã</th><th>Ngày mua</th><th>Số ngày</th><th>Số lượng</th><th>Tổng tiền mua</th><th>Lãi vay lũy kế</th></tr></thead>
+      <tbody><tr><td colspan="7" class="loading">Đang tải…</td></tr></tbody>
       <tfoot></tfoot>
     </table>
   </div>
@@ -536,9 +565,10 @@ function renderInsight(rows){
     const cust=cellStr(r[1]), buyDate=cellDate(r[2]), ticker=cellStr(r[6]);
     if(!cust||!buyDate||!ticker||ticker==='-') continue;
     const buyVal=cellNum(r[9]); if(buyVal<=0) continue;
-    deals.push({cust,buyDate,buyVal,on:cellStr(r[10]).toUpperCase()==='ON',
+    deals.push({cust,ticker,buyDate,buyVal,qty:cellNum(r[8]),on:cellStr(r[10]).toUpperCase()==='ON',
       sellDate:cellDate(r[11]),days:cellNum(r[21]),interest:cellNum(r[23]),pnl:cellNum(r[24])});
   }
+  renderHoldings(deals);
   /* KPI deal đang mở */
   const open=deals.filter(d=>d.on);
   document.getElementById('insOpen').textContent=open.length;
@@ -559,6 +589,42 @@ function renderInsight(rows){
   const T=list.reduce((a,o)=>({deals:a.deals+o.deals,buy:a.buy+o.buy,int:a.int+o.int,pnl:a.pnl+o.pnl,onCnt:a.onCnt+o.onCnt,onVal:a.onVal+o.onVal}),{deals:0,buy:0,int:0,pnl:0,onCnt:0,onVal:0});
   document.querySelector('#rankTable tfoot').innerHTML=
     `<tr><td>Total</td><td>${T.deals}</td><td>${fmt(T.buy)}</td><td>${fmt(T.int)}</td><td>${deltaHtml(Math.round(T.pnl))}</td><td></td><td></td><td>${T.onCnt} (${fmt(T.onVal)})</td></tr>`;
+}
+
+/* ================= TỒN KHO: ma trận khách × mã + deal >85 ngày ================= */
+function renderHoldings(deals){
+  const open=deals.filter(d=>d.on&&d.qty>0);
+  /* --- matrix --- */
+  const m={}, colTot={};
+  for(const d of open){
+    (m[d.cust]=m[d.cust]||{})[d.ticker]=(m[d.cust][d.ticker]||0)+d.qty;
+    colTot[d.ticker]=(colTot[d.ticker]||0)+d.qty;
+  }
+  const ticks=Object.keys(colTot).sort((a,b)=>colTot[b]-colTot[a]);
+  const custs=Object.keys(m).sort((a,b)=>a.localeCompare(b,'vi'));
+  document.querySelector('#holdTable thead').innerHTML=
+    '<tr><th>Tên KH</th>'+ticks.map(t=>`<th>${t}</th>`).join('')+'</tr>';
+  document.querySelector('#holdTable tbody').innerHTML=custs.map(c=>
+    '<tr><td>'+c+'</td>'+ticks.map(t=>{
+      const v=m[c][t];
+      if(!v) return '<td></td>';
+      const a=(0.12+0.55*(v/colTot[t])).toFixed(2);
+      return `<td style="background:rgba(24,160,72,${a})">${fmt(v)}</td>`;
+    }).join('')+'</tr>').join('') || '<tr><td colspan="'+(ticks.length+1)+'" style="text-align:center;color:#999;">Không có deal ON</td></tr>';
+  document.querySelector('#holdTable tfoot').innerHTML=
+    '<tr><td>TỔNG</td>'+ticks.map(t=>`<td style="text-align:center;">${fmt(colTot[t])}</td>`).join('')+'</tr>';
+  /* --- deal >85 ngày --- */
+  const today=new Date();
+  const olds=open.map(d=>({...d, age: d.days>0 ? d.days : Math.round((today-d.buyDate)/86400000)}))
+    .filter(d=>d.age>85).sort((a,b)=>b.age-a.age);
+  document.querySelector('#oldDealTable tbody').innerHTML=olds.length?olds.map(d=>`<tr>
+    <td>${d.cust}</td><td>${d.ticker}</td><td>${d.buyDate.toLocaleDateString('vi-VN')}</td>
+    <td style="color:var(--red);font-weight:700;">${d.age}</td>
+    <td>${fmt(d.qty)}</td><td>${fmt(d.buyVal)}</td><td>${fmt(d.interest)}</td></tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;color:#999;">Không có deal nào trên 85 ngày</td></tr>';
+  document.querySelector('#oldDealTable tfoot').innerHTML=olds.length?
+    `<tr><td>Total (${olds.length} deal)</td><td></td><td></td><td></td>
+     <td>${fmt(olds.reduce((a,d)=>a+d.qty,0))}</td><td>${fmt(olds.reduce((a,d)=>a+d.buyVal,0))}</td><td>${fmt(olds.reduce((a,d)=>a+d.interest,0))}</td></tr>`:'';
 }
 
 /* ================= LOAD ALL ================= */
