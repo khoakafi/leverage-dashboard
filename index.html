@@ -391,6 +391,7 @@ function renderInterest(rows){
     byDate.set(k,(byDate.get(k)||0)+cellNum(r[5]));
   }
   const pts=[...byDate.entries()].sort((a,b)=>a[0]-b[0]);
+  renderRevenue(pts);
   let prevM=-1;
   const labels=pts.map(([t])=>{
     const d=new Date(t);
@@ -500,8 +501,35 @@ function loadTrans(rows){
   renderTransTables();
 }
 
-/* ================= INSIGHT (Key in) ================= */
+/* ================= INSIGHT: lãi vay theo tháng (từ NAV - Batch, lãi thực tế từng ngày) ================= */
 let revChart;
+function renderRevenue(pts){ // pts = [[timestamp, dailyInterest], ...]
+  const mAgg={};
+  for(const [t,v] of pts){const d=new Date(t);const k=d.getFullYear()+'-'+(d.getMonth()+1);mAgg[k]=(mAgg[k]||0)+v;}
+  const totInt=pts.reduce((a,p)=>a+p[1],0);
+  const now=new Date(), curKey=now.getFullYear()+'-'+(now.getMonth()+1);
+  const prev=new Date(now.getFullYear(),now.getMonth()-1,1), pKey=prev.getFullYear()+'-'+(prev.getMonth()+1);
+  const first=new Date(pts[0][0]);
+  document.getElementById('insTotal').textContent=fmt(totInt);
+  document.getElementById('insTotalSub').innerHTML=`<span style="color:#888;font-weight:400;">từ ${first.toLocaleDateString('vi-VN')}</span>`;
+  document.getElementById('insMonth').textContent=fmt(mAgg[curKey]||0);
+  document.getElementById('insMonthSub').innerHTML=deltaHtml(Math.round((mAgg[curKey]||0)-(mAgg[pKey]||0)));
+  const keys=Object.keys(mAgg).sort((a,b)=>{const[x,y]=a.split('-').map(Number),[u,v]=b.split('-').map(Number);return x-u||y-v;});
+  const ctx=document.getElementById('revChart');
+  const cfg={type:'bar',
+    data:{labels:keys.map(k=>{const[y,m]=k.split('-');return MONTHS[m-1]+' '+y;}),
+      datasets:[{data:keys.map(k=>mAgg[k]),backgroundColor:GREEN,barPercentage:.62}]},
+    options:{maintainAspectRatio:false,responsive:true,layout:{padding:{top:16}},
+      scales:{x:{grid:{display:false},border:{display:false},ticks:{color:'#666',font:{size:10.5},maxRotation:0,autoSkip:true}},
+        y:{grid:{color:'#F0F0F0'},border:{display:false},ticks:{color:'#666',font:{size:11},callback:v=>(v/1e6)+'tr'}}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>fmt(c.raw)}},
+        datalabels:{display:true,anchor:'end',align:'end',offset:-2,color:'#555',font:{size:9.5},
+          formatter:v=>Math.round(v/1e6)+'tr'}}}};
+  if(revChart){revChart.data=cfg.data;revChart.update();}else revChart=new Chart(ctx,cfg);
+}
+
+/* ================= INSIGHT (Key in): xếp hạng khách + deal mở ================= */
 function renderInsight(rows){
   const deals=[];
   for(let i=2;i<rows.length;i++){const r=rows[i];
