@@ -755,14 +755,9 @@ function renderCustomerPage(){
   const rate=nrt?nrt.rate:'–';
   const base=nav-0.2*mkt;
   const buyPower=base<0?base:base*5;
-  /* Lãi/Lỗ hôm nay = NAV realtime + lãi vay ngày + Check End day!K − vốn nộp hôm nay */
+  /* Lãi/Lỗ hôm nay: công thức trong sheet DESIGN update chưa chốt — tạm hiển thị "–".
+     Khi có công thức cuối cùng sẽ tính từ NAV - Real Time + Check End day + Key in. */
   let today=null;
-  if(nrt&&__ced){
-    const t0=new Date(); t0.setHours(0,0,0,0);
-    const depToday=__custRows.filter(r=>r.cust===name&&!r.ticker&&r.capIn&&r.buyDate&&r.buyDate.getTime()===t0.getTime())
-      .reduce((a,r)=>a+r.capIn,0);
-    today=nrt.nav+(__nrt[name].dailyInt||0)+(__ced[name]||0)-depToday;
-  }
   const el=id=>document.getElementById(id);
   el('cNav').textContent=fmt(nav); el('cNav').style.color=nav<0?'var(--red)':'var(--text)';
   el('cDebt').textContent=fmt(debt);
