@@ -818,16 +818,20 @@ function renderHoldings(deals){
 
 /* ================= TRANG KHÁCH HÀNG (từ Key in, deal ON) ================= */
 let custPie, uPie, cuNavChart, __custRows=[], __navBatch=[], __cuHist=[], cuRange=30;
+function fillCustSelects(){
+  const names=new Set(__custRows.map(r=>r.cust));
+  if(__nrt) Object.keys(__nrt).forEach(n=>names.add(n));
+  const sorted=[...names].sort((a,b)=>a.localeCompare(b,'vi'));
+  ['custSel','uSel'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const prev=sel.value;
+    sel.innerHTML=sorted.map(n=>`<option value="${n}">${n}</option>`).join('');
+    if(prev&&names.has(prev)) sel.value=prev;
+  });
+}
 function setupCustomerPage(rows){
   __custRows=rows;
-  const fill=sel=>{
-    const prev=sel.value;
-    const names=[...new Set(rows.map(r=>r.cust))].sort((a,b)=>a.localeCompare(b,'vi'));
-    sel.innerHTML=names.map(n=>`<option value="${n}">${n}</option>`).join('');
-    if(prev&&names.includes(prev)) sel.value=prev;
-  };
-  fill(document.getElementById('custSel'));
-  fill(document.getElementById('uSel'));
+  fillCustSelects();
   renderCustomerPage();
   renderUpdatePage();
 }
@@ -839,6 +843,7 @@ function loadNRT(rows){ // NAV - Real Time, khối trái cột A-G
     if(!n||n==='Khách Hàng'||n==='dạ') continue;
     __nrt[n]={nav:cellNum(r[1]), debt:cellNum(r[3]), dailyInt:cellNum(r[5]), rate:cellStr(r[6])};
   }
+  fillCustSelects();
   renderCustomerPage();
   renderUpdatePage();
 }
