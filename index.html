@@ -985,11 +985,16 @@ function renderUpdatePage(){
   }).sort((a,b)=>b.mkt-a.mkt);
   const mkt=list.reduce((a,s)=>a+s.mkt,0);
   const nrt=__nrt&&__nrt[name];
-  const nav=nrt?nrt.nav:mkt-rows.reduce((a,r)=>a+r.debtNow,0);
   const debt=nrt?nrt.debt:rows.reduce((a,r)=>a+r.debtNow,0);
   const hist=__navBatch.filter(h=>h.n===name).sort((a,b)=>a.d-b.d);
   __cuHist=hist;
-  const prev=hist.length?hist[hist.length-1]:null;
+  /* NAV: nếu NAV - Batch đã có bản ghi hôm nay thì dùng nó, chưa có thì dùng NAV - Real Time.
+     Delta luôn so với ngày gần nhất TRƯỚC hôm nay. */
+  const t0=new Date(); t0.setHours(0,0,0,0);
+  const past=hist.filter(h=>h.d<t0);
+  const prev=past.length?past[past.length-1]:null;
+  const todayRec=hist.length&&hist[hist.length-1].d.getTime()===t0.getTime()?hist[hist.length-1]:null;
+  const nav=todayRec?todayRec.nav:(nrt?nrt.nav:mkt-rows.reduce((a,r)=>a+r.debtNow,0));
   const el=id=>document.getElementById(id);
   const sub=(id,cur,prevV,suffix)=>{const e=el(id);
     if(!prevV){e.innerHTML='<span style="color:#999;font-weight:400;">–</span>';return;}
