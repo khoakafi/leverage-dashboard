@@ -148,6 +148,37 @@
   .cust-grid{display:flex;gap:20px;margin-top:12px;align-items:flex-start;}
   .cust-left{flex:11;min-width:0;}
   .cust-right{flex:9;min-width:0;background:#fff;box-shadow:var(--card-shadow);border-radius:2px;padding:10px;}
+  /* ===== customer page (giao diện mới) ===== */
+  #page-customer{background:#F5F8F6;}
+  .cu-head{display:flex;justify-content:space-between;align-items:center;
+    border-left:4px solid var(--green);padding-left:12px;margin-bottom:14px;}
+  .cu-hello{font-size:20px;font-weight:700;}
+  .cu-sub{color:#888;font-size:12.5px;margin-top:2px;}
+  .cu-badge{background:#fff;border-radius:20px;padding:7px 13px;font-size:12px;color:#333;
+    box-shadow:var(--card-shadow);white-space:nowrap;}
+  .cu-badge::before{content:'●';color:var(--green);margin-right:6px;font-size:10px;}
+  .cu-cards{display:flex;gap:14px;}
+  .cu-card{flex:1;background:#fff;border-radius:12px;box-shadow:var(--card-shadow);
+    padding:14px 16px;min-width:0;}
+  .cu-card .lbl{color:#666;font-size:12.5px;}
+  .cu-card .big{font-size:21px;font-weight:700;margin-top:5px;white-space:nowrap;}
+  .cu-card .sub{font-size:11.5px;margin-top:5px;font-weight:600;}
+  .cu-slider{height:6px;border-radius:3px;margin-top:16px;position:relative;
+    background:linear-gradient(90deg,#D64554,#F2C230,#18A048);}
+  .cu-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:3.5px solid #333;
+    position:absolute;top:-4px;left:50%;box-sizing:border-box;}
+  .cu-slider-lbl{display:flex;justify-content:space-between;color:#AAA;font-size:10px;margin-top:5px;}
+  .cu-grid{display:flex;gap:14px;margin-top:14px;align-items:stretch;}
+  .cu-box{background:#fff;border-radius:12px;box-shadow:var(--card-shadow);padding:14px 16px;min-width:0;}
+  .cu-title{font-weight:700;font-size:14.5px;border-left:3px solid var(--green);
+    padding-left:9px;margin-bottom:10px;}
+  #page-customer thead th{background:#EFF6F1;color:#444;font-size:11.5px;position:static;}
+  .cu-center{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;pointer-events:none;}
+  .cu-center>div:first-child{font-weight:700;font-size:16px;}
+  .cu-ranges button{border:1px solid #E5E5E5;background:#F5F5F5;color:#777;font:inherit;
+    font-size:12px;font-weight:600;padding:5px 13px;border-radius:8px;cursor:pointer;margin-left:6px;}
+  .cu-ranges button.active{background:var(--green);color:#fff;border-color:var(--green);}
   /* ===== holdings matrix ===== */
   #holdTable td{text-align:right;font-size:12.5px;padding:4px 10px;}
   #holdTable td:first-child,#holdTable tfoot td:first-child{
@@ -293,43 +324,70 @@
 </div>
 
 <div class="page" id="page-customer">
-  <div class="cust-grid">
-    <div class="cust-left">
-      <select id="custSel"></select>
-      <div class="cust-nav-box">
-        <div class="lbl">Tài Sản Ròng</div>
-        <div class="val" id="cNav">–</div>
-      </div>
-      <div class="tbl-wrap" style="margin-top:10px;">
-        <table>
-          <thead><tr><th style="text-align:left;">Dư Nợ</th><th style="text-align:center;">Tỷ Lệ</th><th>Sức Mua (*5)</th></tr></thead>
-          <tbody><tr style="background:#EAF6EF;">
-            <td style="font-weight:700;color:var(--green-dark);font-size:14.5px;" id="cDebt">–</td>
-            <td style="text-align:center;font-weight:700;font-size:14.5px;" id="cRate">–</td>
-            <td style="font-weight:700;font-size:14.5px;" id="cBuyPower">–</td>
-          </tr></tbody>
-        </table>
-      </div>
-      <div style="background:#fff;box-shadow:var(--card-shadow);border-radius:2px;margin-top:10px;">
-        <div class="stat-row"><span class="lbl">Lãi/Lỗ Hiện Tại<small>(Bao gồm phí bán + margin)</small></span><span class="val" id="cPnl">–</span></div>
-        <div class="stat-row"><span class="lbl">Lãi/Lỗ Hôm nay</span><span class="val" id="cToday">–</span></div>
-        <div class="stat-row"><span class="lbl">Tổng Vốn</span><span class="val" id="cCap">–</span></div>
-        <div class="stat-row"><span class="lbl">Tổng Giá Trị Thị Trường</span><span class="val" id="cMkt">–</span></div>
-      </div>
-      <div class="tbl-wrap" style="margin-top:10px;max-height:38vh;">
+  <div class="cu-head">
+    <div>
+      <div class="cu-hello">Xin chào, <span id="cuName">–</span> 👋</div>
+      <div class="cu-sub">Tổng quan tài khoản của bạn</div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <span class="cu-badge">Dữ liệu Real Time</span>
+      <select id="custSel" style="max-width:220px;"></select>
+    </div>
+  </div>
+
+  <div class="cu-cards">
+    <div class="cu-card"><div class="lbl">NAV (Tài sản ròng)</div><div class="big" id="cNav">–</div><div class="sub" id="cNavD"></div></div>
+    <div class="cu-card"><div class="lbl">Giá trị danh mục</div><div class="big" id="cMkt">–</div><div class="sub" id="cMktD"></div></div>
+    <div class="cu-card"><div class="lbl">Dư nợ</div><div class="big" id="cDebt">–</div><div class="sub" id="cDebtD"></div></div>
+    <div class="cu-card"><div class="lbl">Tỷ lệ ký quỹ</div><div class="big" id="cRatio">–</div>
+      <div class="cu-slider"><div class="cu-thumb" id="cThumb"></div></div>
+      <div class="cu-slider-lbl"><span>-100%</span><span>100%</span></div>
+    </div>
+  </div>
+
+  <div class="cu-cards" style="margin-top:14px;">
+    <div class="cu-card"><div class="lbl">Sức Mua (*5)</div><div class="big" id="cBuyPower" style="font-size:17px;">–</div><div class="sub" style="color:#999;font-weight:400;">Lãi suất: <span id="cRate">–</span></div></div>
+    <div class="cu-card"><div class="lbl">Lãi/Lỗ Hiện Tại</div><div class="big" id="cPnl" style="font-size:17px;">–</div><div class="sub" style="color:#999;font-weight:400;">Bao gồm phí bán + margin</div></div>
+    <div class="cu-card"><div class="lbl">Lãi/Lỗ Hôm nay</div><div class="big" id="cToday" style="font-size:17px;">–</div><div class="sub" style="color:#999;font-weight:400;">&nbsp;</div></div>
+    <div class="cu-card"><div class="lbl">Tổng Vốn</div><div class="big" id="cCap" style="font-size:17px;">–</div><div class="sub" style="color:#999;font-weight:400;">Tổng tiền mua deal đang mở</div></div>
+  </div>
+
+  <div class="cu-grid">
+    <div class="cu-box" style="flex:11;">
+      <div class="cu-title">Danh mục cổ phiếu đang nắm giữ</div>
+      <div style="overflow:auto;max-height:330px;">
         <table id="custStockTable">
-          <thead><tr><th>Mã CP</th><th>Giá Vốn</th><th>Giá TT</th><th>KL</th><th>KLKD</th><th>Lãi/lỗ</th><th>Phần trăm (%)</th></tr></thead>
+          <thead><tr><th>MÃ CP</th><th>GIÁ VỐN</th><th>GIÁ THỊ TRƯỜNG</th><th>KL</th><th>KLKD</th><th>LÃI/LỖ</th><th>%</th></tr></thead>
           <tbody><tr><td colspan="7" class="loading">Đang tải…</td></tr></tbody>
           <tfoot></tfoot>
         </table>
       </div>
     </div>
-    <div class="cust-right">
-      <div style="position:relative;height:420px;"><canvas id="custPie"></canvas></div>
+    <div class="cu-box" style="flex:9;">
+      <div class="cu-title">Cơ cấu danh mục</div>
+      <div style="display:flex;align-items:center;gap:18px;">
+        <div style="position:relative;width:225px;height:225px;flex:none;">
+          <canvas id="custPie"></canvas>
+          <div class="cu-center"><div id="cuTot"></div><div style="color:#888;font-size:11px;">Tổng danh mục</div></div>
+        </div>
+        <div id="cuLegend" style="flex:1;font-size:12.5px;"></div>
+      </div>
     </div>
   </div>
 
-  <h4 style="color:var(--green);margin:16px 0 8px;font-size:15px;font-weight:700;" id="cTradeTitle">Giao dịch trong ngày</h4>
+  <div class="cu-box" style="margin-top:14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <div class="cu-title" style="margin-bottom:0;">NAV biến động theo ngày</div>
+      <div class="cu-ranges" id="cuRanges">
+        <button data-r="7">7 ngày</button><button data-r="30" class="active">1 tháng</button>
+        <button data-r="90">3 tháng</button><button data-r="180">6 tháng</button><button data-r="0">Tất cả</button>
+      </div>
+    </div>
+    <div style="position:relative;height:250px;"><canvas id="cuNavChart"></canvas></div>
+  </div>
+
+  <div class="cu-box" style="margin-top:14px;">
+  <div class="cu-title" id="cTradeTitle">Giao dịch trong ngày</div>
   <div class="trade-tables">
     <div class="tbl-wrap">
       <table id="cBuyTable">
@@ -343,6 +401,7 @@
         <tbody></tbody><tfoot></tfoot>
       </table>
     </div>
+  </div>
   </div>
 </div>
 
@@ -500,11 +559,15 @@ function renderStocks(rows){
 let interestChart;
 function renderInterest(rows){
   const byDate=new Map();
+  __navBatch=[];
   for(const r of rows){
     const d=cellDate(r[6]); if(!d) continue;
     const k=d.getTime();
     byDate.set(k,(byDate.get(k)||0)+cellNum(r[5]));
+    const n=cellStr(r[0]);
+    if(n) __navBatch.push({n, d, nav:cellNum(r[1]), debt:cellNum(r[3]), port:cellNum(r[4])});
   }
+  renderCustomerPage();
   const pts=[...byDate.entries()].sort((a,b)=>a[0]-b[0]);
   renderRevenue(pts);
   let prevM=-1;
@@ -724,7 +787,7 @@ function renderHoldings(deals){
 }
 
 /* ================= TRANG KHÁCH HÀNG (từ Key in, deal ON) ================= */
-let custPie, __custRows=[];
+let custPie, cuNavChart, __custRows=[], __navBatch=[], __cuHist=[], cuRange=30;
 function setupCustomerPage(rows){
   __custRows=rows;
   const sel=document.getElementById('custSel');
@@ -788,21 +851,35 @@ function renderCustomerPage(){
   /* Lãi/Lỗ hôm nay: công thức trong sheet DESIGN update chưa chốt — tạm hiển thị "–".
      Khi có công thức cuối cùng sẽ tính từ NAV - Real Time + Check End day + Key in. */
   let today=null;
+  /* lịch sử theo ngày từ NAV - Batch */
+  const hist=__navBatch.filter(h=>h.n===name).sort((a,b)=>a.d-b.d);
+  __cuHist=hist;
+  const prev=hist.length?hist[hist.length-1]:null;
   const el=id=>document.getElementById(id);
-  el('cNav').textContent=fmt(nav); el('cNav').style.color=nav<0?'var(--red)':'var(--text)';
-  el('cDebt').textContent=fmt(debt);
+  const sub=(id,cur,prevV,suffix)=>{const e=el(id);
+    if(!prevV){e.innerHTML='<span style="color:#999;font-weight:400;">–</span>';return;}
+    const d=cur-prevV,p=d/Math.abs(prevV)*100;
+    e.innerHTML=`<span class="${d<0?'neg':'pos'}">${d<0?'▼':'▲'} ${fmt(Math.abs(d))} đ (${p>=0?'+':''}${p.toFixed(2)}%) ${suffix}</span>`;};
+  el('cuName').textContent=name;
+  el('cNav').textContent=fmt(nav)+' đ'; el('cNav').style.color=nav<0?'var(--red)':'var(--text)';
+  sub('cNavD',nav,prev?prev.nav:0,'hôm nay');
+  el('cMkt').textContent=fmt(mkt)+' đ';
+  sub('cMktD',mkt,prev?prev.port:0,'so với hôm qua');
+  el('cDebt').textContent=fmt(debt)+' đ';
+  sub('cDebtD',debt,prev?prev.debt:0,'so với hôm qua');
+  const ratio=mkt?nav/mkt*100:0;
+  el('cRatio').textContent=ratio.toFixed(2)+'%';
+  el('cThumb').style.left='calc('+Math.max(0,Math.min(100,(ratio+100)/2))+'% - 7px)';
   el('cRate').textContent=rate;
-  el('cBuyPower').textContent=fmt(buyPower); el('cBuyPower').style.color=buyPower<0?'var(--red)':'var(--text)';
-  el('cPnl').textContent=fmt(pnl); el('cPnl').style.color=pnl<0?'var(--red)':'var(--green)';
-  el('cToday').textContent=today==null?'–':fmt(today);
+  el('cBuyPower').textContent=fmt(buyPower)+' đ'; el('cBuyPower').style.color=buyPower<0?'var(--red)':'var(--text)';
+  el('cPnl').textContent=fmt(pnl)+' đ'; el('cPnl').style.color=pnl<0?'var(--red)':'var(--green)';
+  el('cToday').textContent=today==null?'–':fmt(today)+' đ';
   el('cToday').style.color=today!=null&&today<0?'var(--red)':'var(--text)';
-  el('cCap').textContent=fmt(cap);
-  el('cMkt').textContent=fmt(mkt);
+  el('cCap').textContent=fmt(cap)+' đ';
   /* bảng mã */
-  const k=v=>(v/1000).toFixed(2); // hiển thị giá theo nghìn như design
   document.querySelector('#custStockTable tbody').innerHTML=list.length?list.map(s=>`<tr>
     <td style="font-weight:600;">${s.t}${s.short?' <span style="color:var(--red);font-size:10px;">SHORT</span>':''}</td>
-    <td>${k(s.avg)}</td><td>${k(s.cur)}</td>
+    <td>${fmt(s.avg)} đ</td><td>${fmt(s.cur)} đ</td>
     <td>${fmt(s.qty)}</td><td>${s.avail?fmt(s.avail):'<span style="color:#999;">Chờ về</span>'}</td>
     <td class="${s.pnl<0?'neg':'pos'}" style="font-weight:600;">${fmt(s.pnl)}</td>
     <td class="${s.pnl<0?'neg':'pos'}">${(s.pct*100).toFixed(2)}%</td></tr>`).join('')
@@ -812,19 +889,52 @@ function renderCustomerPage(){
      <td class="${pnl<0?'neg':'pos'}">${fmt(list.reduce((a,s)=>a+s.pnl,0))}</td><td></td></tr>`:'';
   /* giao dịch trong ngày của khách (từ Trans_All, ngày gần nhất) */
   renderCustTrades(name);
-  /* pie */
+  /* doughnut cơ cấu danh mục */
   const shades=['#18A048','#5DC389','#0E7A35','#9ADBB4','#3AB268','#C8ECD6','#26935A','#7FCF9F'];
+  document.getElementById('cuTot').textContent=fmt(mkt);
+  document.getElementById('cuLegend').innerHTML=list.map((s,i)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:7px 0;">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${shades[i%shades.length]};margin-right:7px;"></span><b>${s.t}</b></span>
+      <span style="text-align:right;line-height:1.3;"><b>${mkt?(s.mkt/mkt*100).toFixed(1):0}%</b><br><span style="color:#999;font-size:11px;">${fmt(s.mkt)} đ</span></span>
+    </div>`).join('')||'<span style="color:#999;">Không có mã đang cầm</span>';
   const ctx=document.getElementById('custPie');
-  const cfg={type:'pie',
+  const cfg={type:'doughnut',
     data:{labels:list.map(s=>s.t),
-      datasets:[{data:list.map(s=>s.mkt),backgroundColor:list.map((_,i)=>shades[i%shades.length]),borderColor:'#fff',borderWidth:2}]},
+      datasets:[{data:list.map(s=>s.mkt),backgroundColor:list.map((_,i)=>shades[i%shades.length]),
+        borderColor:'#fff',borderWidth:2,cutout:'70%'}]},
     options:{maintainAspectRatio:false,responsive:true,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:12}}},
-        tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)}},
-        datalabels:{display:true,color:'#fff',font:{size:11.5,weight:700},
-          formatter:(v,c)=>{const tot=c.dataset.data.reduce((a,b)=>a+b,0);return tot?c.chart.data.labels[c.dataIndex]+'\n'+(v/tot*100).toFixed(1)+'%':'';}}}}};
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' đ'}},
+        datalabels:{display:false}}}};
   if(custPie){custPie.data=cfg.data;custPie.update();}else custPie=new Chart(ctx,cfg);
+  /* chart NAV theo ngày */
+  renderNavChart(hist);
 }
+function renderNavChart(hist){
+  let pts=hist;
+  if(cuRange>0&&hist.length){
+    const maxD=hist[hist.length-1].d.getTime(), cut=maxD-cuRange*86400000;
+    pts=hist.filter(h=>h.d.getTime()>=cut);
+  }
+  const ctx=document.getElementById('cuNavChart');
+  const cfg={type:'line',
+    data:{labels:pts.map(h=>String(h.d.getDate()).padStart(2,'0')+'/'+String(h.d.getMonth()+1).padStart(2,'0')),
+      datasets:[{data:pts.map(h=>h.nav),borderColor:GREEN,borderWidth:2,pointRadius:0,tension:.35,
+        fill:true,backgroundColor:'rgba(24,160,72,.10)'}]},
+    options:{maintainAspectRatio:false,responsive:true,
+      scales:{x:{grid:{display:false},border:{display:false},
+          ticks:{color:'#888',font:{size:10.5},maxRotation:0,autoSkip:true,maxTicksLimit:14}},
+        y:{beginAtZero:true,grid:{color:'#F0F0F0'},border:{display:false},
+          ticks:{color:'#888',font:{size:10.5},callback:v=>v.toLocaleString('vi-VN')}}},
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>fmt(c.raw)+' đ'}},
+        datalabels:{display:false}}}};
+  if(cuNavChart){cuNavChart.data=cfg.data;cuNavChart.update();}else cuNavChart=new Chart(ctx,cfg);
+}
+document.querySelectorAll('#cuRanges button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#cuRanges button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); cuRange=+b.dataset.r; renderNavChart(__cuHist);
+}));
 function renderCustTrades(name){
   const buyT=document.querySelector('#cBuyTable tbody'), sellT=document.querySelector('#cSellTable tbody');
   if(!allTrans.length){ buyT.innerHTML=sellT.innerHTML='<tr><td colspan="4" style="text-align:center;color:#999;">Đang tải…</td></tr>'; return; }
@@ -887,7 +997,7 @@ document.querySelectorAll('.nav button').forEach(btn=>{
 document.getElementById('lastDays').addEventListener('change',renderTransTables);
 
 function fixChartsAll(){
-  [stocksChart,interestChart,tradeChart,revChart,custPie].forEach(c=>{ if(c){ c.resize(); c.update('none'); } });
+  [stocksChart,interestChart,tradeChart,revChart,custPie,cuNavChart].forEach(c=>{ if(c){ c.resize(); c.update('none'); } });
 }
 /* thu gọn / mở rộng sidebar */
 document.getElementById('sbToggle').addEventListener('click',()=>{
