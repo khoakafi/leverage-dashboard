@@ -392,7 +392,7 @@
 
   <div class="cu-cards">
     <div class="cu-card"><div class="lbl">NAV (Tài sản ròng)</div><div class="big" id="uNav">–</div><div class="sub" id="uNavD"></div></div>
-    <div class="cu-card"><div class="lbl">Giá trị danh mục</div><div class="big" id="uMkt">–</div><div class="sub" id="uMktD"></div></div>
+    <div class="cu-card"><div class="lbl">Giá trị danh mục</div><div class="big" id="uMkt">–</div><div class="sub">&nbsp;</div></div>
     <div class="cu-card"><div class="lbl">Dư nợ</div><div class="big" id="uDebt">–</div><div class="sub" id="uDebtD"></div></div>
     <div class="cu-card"><div class="lbl">Tỷ lệ ký quỹ</div><div class="big" id="uRatio">–</div>
       <div class="cu-slider"><div class="cu-thumb" id="uThumb"></div></div>
@@ -827,14 +827,30 @@ function loadAPI(rows){ // sheet API: A=mã, C=giá real-time
   renderCustomerPage();
   renderUpdatePage();
 }
+let __listNames=[];
+function load5bil(rows){ // danh sách khách chuẩn: sheet "5 bil" cột B, từ C.P trở xuống
+  __listNames=[];
+  let started=false;
+  for(const r of rows){
+    const n=cellStr(r[1]);
+    if(!started){ if(n==='C.P') started=true; else continue; }
+    if(!n) break;
+    __listNames.push(n);
+  }
+  fillCustSelects();
+  renderCustomerPage();
+  renderUpdatePage();
+}
 function fillCustSelects(){
-  const names=new Set(__custRows.map(r=>r.cust));
-  __nrtNames.forEach(n=>names.add(n));
-  const sorted=[...names].sort((a,b)=>a.localeCompare(b,'vi'));
+  let list;
+  if(__listNames.length) list=__listNames;                                   // giữ nguyên thứ tự trong sheet 5 bil
+  else if(__nrtNames.length) list=[...__nrtNames].sort((a,b)=>a.localeCompare(b,'vi'));
+  else list=[...new Set(__custRows.map(r=>r.cust))].sort((a,b)=>a.localeCompare(b,'vi'));
+  const names=new Set(list);
   ['custSel','uSel'].forEach(id=>{
     const sel=document.getElementById(id);
     const prev=sel.value;
-    sel.innerHTML=sorted.map(n=>`<option value="${n}">${n}</option>`).join('');
+    sel.innerHTML=list.map(n=>`<option value="${n}">${n}</option>`).join('');
     if(prev&&names.has(prev)) sel.value=prev;
   });
 }
@@ -983,7 +999,6 @@ function renderUpdatePage(){
   el('uNav').textContent=fmt(nav)+' đ'; el('uNav').style.color=nav<0?'var(--red)':'var(--text)';
   sub('uNavD',nav,prev?prev.nav:0,'hôm nay');
   el('uMkt').textContent=fmt(mkt)+' đ';
-  sub('uMktD',mkt,prev?prev.port:0,'so với hôm qua');
   el('uDebt').textContent=fmt(debt)+' đ';
   sub('uDebtD',debt,prev?prev.debt:0,'so với hôm qua');
   const ratio=mkt?nav/mkt*100:0;
@@ -1082,7 +1097,8 @@ async function loadAll(){
     fetchSheetJSON('Key in').then(renderInsight),
     fetchSheetJSON('NAV - Real Time').then(loadNRT),
     fetchSheetJSON('Check End day').then(loadCED),
-    fetchSheetJSON('API').then(loadAPI)
+    fetchSheetJSON('API').then(loadAPI),
+    fetchSheetJSON('5 bil').then(load5bil)
   ];
   const res=await Promise.allSettled(jobs);
   const errs=res.filter(r=>r.status==='rejected');
