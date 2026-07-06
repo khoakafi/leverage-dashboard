@@ -829,7 +829,7 @@ function loadAPI(rows){ // sheet API: A=mã, C=giá real-time
 }
 function fillCustSelects(){
   const names=new Set(__custRows.map(r=>r.cust));
-  if(__nrt) Object.keys(__nrt).forEach(n=>names.add(n));
+  __nrtNames.forEach(n=>names.add(n));
   const sorted=[...names].sort((a,b)=>a.localeCompare(b,'vi'));
   ['custSel','uSel'].forEach(id=>{
     const sel=document.getElementById(id);
@@ -844,13 +844,16 @@ function setupCustomerPage(rows){
   renderCustomerPage();
   renderUpdatePage();
 }
-let __nrt=null, __ced=null;
+let __nrt=null, __ced=null, __nrtNames=[];
 function loadNRT(rows){ // NAV - Real Time, khối trái cột A-G
-  __nrt={};
+  __nrt={}; __nrtNames=[];
+  let started=false; // chỉ lấy danh sách khách từ dòng C.P trở xuống
   for(const r of rows){
     const n=cellStr(r[0]);
     if(!n||n==='Khách Hàng'||n==='dạ') continue;
     __nrt[n]={nav:cellNum(r[1]), debt:cellNum(r[3]), dailyInt:cellNum(r[5]), rate:cellStr(r[6])};
+    if(n==='C.P') started=true;
+    if(started) __nrtNames.push(n);
   }
   fillCustSelects();
   renderCustomerPage();
