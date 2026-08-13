@@ -318,69 +318,96 @@
     #custTable tbody td:empty,#custTable tfoot td:empty{display:block;}
     #custTable tbody td:empty::before,#custTable tfoot td:empty::before{display:none;}
 
-    /* ===== KH Update: dựng giống app khách hàng ===== */
+    /* ===== KH Update: dựng GIỐNG HỆT app khách hàng ===== */
     #page-custupdate .cu-head{
-      display:block;border-left:none;padding-left:0;margin-bottom:12px;
+      display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+      border-left:none;padding-left:0;margin-bottom:14px;
     }
-    #page-custupdate .cu-hello{font-size:19px;}
-    #page-custupdate .cu-sub{margin-bottom:10px;}
-    #page-custupdate .cu-head > div:last-child{
-      display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    #page-custupdate .cu-hello{font-size:20px;font-weight:800;}
+    #page-custupdate #uName{color:var(--green);}
+    #page-custupdate .cu-sub{color:#8b9490;font-size:12px;margin-top:3px;}
+    #page-custupdate .cu-head > div:last-child{display:flex;align-items:center;gap:8px;flex:none;}
+    #page-custupdate .cu-badge{display:none;}
+    #page-custupdate #uSel{
+      max-width:132px !important;font-size:13px;padding:8px 10px;border-radius:999px;
+      text-overflow:ellipsis;
     }
-    #page-custupdate #uSel{flex:1;min-width:150px;max-width:none !important;}
-    .cu-badge{font-size:11px;}
 
-    /* 1 thẻ NAV lớn + 3 ô nhỏ 1 hàng (như app khách) */
+    /* ---- Hero: 4 thẻ gộp thành MỘT thẻ trắng như app khách ---- */
     #page-custupdate .cu-cards{
-      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+      display:grid;grid-template-columns:1fr 1fr;gap:0 14px;
+      background:#fff;border:1px solid #EDEFEE;border-radius:18px;
+      box-shadow:0 1px 3px rgba(16,24,40,.07);padding:16px 16px 15px;
     }
     #page-custupdate .cu-card{
-      padding:12px 12px 11px;border-radius:14px;box-shadow:0 1px 3px rgba(16,24,40,.07);
+      background:none;box-shadow:none;border:none;border-radius:0;padding:0;min-width:0;
     }
-    #page-custupdate .cu-card:first-child{grid-column:1 / -1;padding:16px 16px 14px;}
-    #page-custupdate .cu-card .lbl{font-size:10.5px;line-height:1.3;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    #page-custupdate .cu-card:first-child .lbl{font-size:12.5px;}
-    #page-custupdate .cu-card .big{font-size:14px;margin-top:4px;white-space:nowrap;
-      overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;
-      color:var(--green-dark);}
-    #page-custupdate .cu-card:first-child .big{font-size:27px;margin-top:2px;}
-    #page-custupdate .cu-card .sub{font-size:10.5px;margin-top:4px;white-space:nowrap;
-      overflow:hidden;text-overflow:ellipsis;}
-    #page-custupdate .cu-card:first-child .sub{
-      font-size:12px;display:inline-block;padding:4px 10px;border-radius:999px;
-      background:#F1F5F3;margin-top:8px;
+    #page-custupdate .cu-card .lbl{font-size:12.5px;color:#8b9490;}
+    #page-custupdate .cu-card .big{
+      font-size:15px;font-weight:800;margin-top:3px;color:var(--text);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;
     }
-    #page-custupdate .cu-slider{margin-top:9px;height:5px;}
-    #page-custupdate .cu-slider-lbl{font-size:9px;}
+    #page-custupdate .cu-card:nth-child(1){grid-column:1 / -1;}
+    #page-custupdate .cu-card:nth-child(1) .big{font-size:29px;letter-spacing:-.02em;margin-top:2px;}
+    #page-custupdate #uNavD{
+      display:inline-block;margin-top:9px;padding:5px 11px;border-radius:999px;
+      font-size:12.5px;font-weight:700;background:#F1F5F3;
+    }
+    #page-custupdate #uNavD:has(.neg){background:#FDEEEE;}
+    #page-custupdate #uNavD:has(.pos){background:#E8F7EE;}
+    #page-custupdate .cu-card:nth-child(2),
+    #page-custupdate .cu-card:nth-child(3){
+      margin-top:15px;padding-top:14px;border-top:1px solid #F1F4F2;
+    }
+    #page-custupdate .cu-card:nth-child(2){grid-column:1;}
+    #page-custupdate .cu-card:nth-child(3){grid-column:2;}
+    #page-custupdate .cu-card:nth-child(3) .sub{
+      font-size:11.5px;font-weight:700;margin-top:4px;white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;
+    }
+    #page-custupdate .cu-card:nth-child(4){grid-column:1 / -1;margin-top:14px;}
+    #page-custupdate .cu-slider{margin-top:10px;height:6px;}
+    #page-custupdate .cu-slider-lbl{display:none;}
 
-    /* Danh mục nắm giữ: danh sách 3 cột như app khách */
+    /* ---- Danh mục: thanh tóm tắt + hàng tiêu đề + list 3 cột ---- */
     #page-custupdate .cu-box > div[style*="overflow"]{max-height:none !important;overflow:visible !important;}
+    .lv-pf-sum{
+      display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+      background:#F6F9F7;border-radius:12px;padding:10px 14px;margin:2px 0 12px;
+    }
+    .lv-pf-sum .col{display:flex;flex-direction:column;gap:2px;min-width:0;}
+    .lv-pf-sum .col.right{text-align:right;align-items:flex-end;}
+    .lv-pf-sum .lbl{font-size:11.5px;font-weight:600;color:#6b7671;
+      display:flex;align-items:center;gap:5px;}
+    .lv-pf-sum .dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+      display:inline-block;animation:lvpulse 1.6s ease-in-out infinite;}
+    @keyframes lvpulse{0%,100%{opacity:1}50%{opacity:.35}}
+    .lv-pf-sum .val{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+    .lv-pf-head{
+      display:grid;grid-template-columns:1.05fr .95fr 1.15fr;column-gap:8px;
+      font-size:11px;font-weight:600;color:#8b9490;line-height:1.55;
+      padding:0 2px 8px;border-bottom:1px solid #F1F3F2;
+    }
+    .lv-pf-head > div:nth-child(2),.lv-pf-head > div:nth-child(3){text-align:right;}
+
+    #uHold tfoot{display:none;}
     #uHold tbody tr{
       display:grid !important;grid-template-columns:1.05fr .95fr 1.15fr;
-      column-gap:8px;row-gap:3px;align-items:start;
+      column-gap:8px;row-gap:2px;align-items:start;
       background:none;border:none;border-radius:0;box-shadow:none;
-      margin:0;padding:11px 2px;border-bottom:1px solid #F1F3F2;
+      margin:0;padding:12px 2px;border-bottom:1px solid #F1F3F2;
     }
     #uHold tbody tr:last-child{border-bottom:none;}
-    #uHold tbody td{font-size:13.5px;font-weight:700;gap:2px;}
-    #uHold tbody td::before{font-size:9.5px;font-weight:600;color:#a2aba7;}
+    #uHold tbody td{font-size:14px;font-weight:700;gap:0;}
+    #uHold tbody td::before{display:none;}
     #uHold tbody td:nth-child(1){grid-column:1;grid-row:1;font-size:15px;font-weight:800;
       border:none;padding:0;margin:0;}
-    #uHold tbody td:nth-child(1)::before{display:none;}
-    #uHold tbody td:nth-child(4){grid-column:1;grid-row:2;font-size:12.5px;font-weight:600;color:#6b7671;}
+    #uHold tbody td:nth-child(4){grid-column:1;grid-row:2;font-size:12.5px;font-weight:600;color:#8b9490;}
     #uHold tbody td:nth-child(3){grid-column:2;grid-row:1;align-items:flex-end;}
-    #uHold tbody td:nth-child(2){grid-column:2;grid-row:2;font-size:12.5px;font-weight:600;color:#8b9490;
-      align-items:flex-end;}
+    #uHold tbody td:nth-child(2){grid-column:2;grid-row:2;font-size:12.5px;font-weight:600;
+      color:#8b9490;align-items:flex-end;}
     #uHold tbody td:nth-child(5){grid-column:3;grid-row:1;align-items:flex-end;}
-    #uHold tbody td:nth-child(6){grid-column:3;grid-row:2;align-items:flex-end;font-size:12.5px;}
-    #uHold tbody td .ticker-logo,#uHold tbody td img{vertical-align:middle;}
-    #uHold tfoot tr{
-      display:grid !important;grid-template-columns:1fr 1fr;gap:6px 10px;
-      background:#EAF6EF;border:1px solid #CFE9DA;border-radius:12px;
-      padding:11px 13px;margin-top:10px;
-    }
-    #uHold tfoot td:nth-child(1){grid-column:1 / -1;}
+    #uHold tbody td:nth-child(6){grid-column:3;grid-row:2;align-items:flex-end;font-size:13px;}
 
     /* Cơ cấu danh mục: donut trên, chú thích dưới */
     #page-custupdate .cu-box > div:has(#uPie){flex-direction:column;gap:10px !important;}
@@ -1707,10 +1734,11 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
     /* Ô nhỏ ở KH Update: "▲ 1,072,487 đ (-7.51%) hôm nay" -> "▲ -7.51%" */
     document.querySelectorAll('#page-custupdate .cu-card:not(:first-child) .sub').forEach(function(el){
       var t = (el.textContent || '').trim();
-      var m = t.match(/^([▲▼]?)\s*[^(]*\(([^)]+)\)/);
-      if (m) el.textContent = (m[1] ? m[1] + ' ' : '') + m[2];
+      var m = t.match(/^([▲▼]?)\s*[^(]*\(([^)]+)\)\s*(.*)$/);
+      if (m) el.textContent = (m[1] ? m[1] + ' ' : '') + m[2] +
+        (m[3] ? ' ' + m[3].replace('so với ', '') : '');
     });
-    var nodes = document.querySelectorAll('#custTable tbody td, #custTable tfoot td, .cards .card .big, .cards .card .delta, #page-custupdate .cu-cards .cu-card:not(:first-child) .big');
+    var nodes = document.querySelectorAll('#custTable tbody td, #custTable tfoot td, .cards .card .big, .cards .card .delta');
     nodes.forEach(function(td){
       var el = td.querySelector ? (td.querySelector('span') || td) : td;
       var c = compactNum(el.textContent);
@@ -1718,11 +1746,57 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
     });
   }
 
+  /* Trang KH Update: dựng thanh tóm tắt + hàng tiêu đề y như app khách hàng */
+  function num(t){ var n = Number(String(t || '').replace(/[^\d.-]/g, '')); return isFinite(n) ? n : 0; }
+  function buildPortfolioBlocks(){
+    if (!window.matchMedia('(max-width:860px)').matches) return;
+    var tbl = document.getElementById('uHold');
+    if (!tbl) return;
+    var box = tbl.closest('.cu-box');
+    if (!box) return;
+
+    var title = box.querySelector('.cu-title');
+    var sum = box.querySelector('.lv-pf-sum');
+    if (!sum){
+      sum = document.createElement('div');
+      sum.className = 'lv-pf-sum';
+      sum.innerHTML = '<div class="col"><span class="lbl">Giá trị TT <i class="dot"></i></span>' +
+                      '<span class="val" id="lvPfMkt">–</span></div>' +
+                      '<div class="col right"><span class="lbl">Lãi/lỗ</span>' +
+                      '<span class="val" id="lvPfPnl">–</span></div>';
+      title.parentNode.insertBefore(sum, title.nextSibling);
+    }
+    var head = box.querySelector('.lv-pf-head');
+    if (!head){
+      head = document.createElement('div');
+      head.className = 'lv-pf-head';
+      head.innerHTML = '<div>Mã<br>KL</div><div>Giá TT<br>Giá vốn</div><div>Lãi/lỗ<br>%</div>';
+      sum.parentNode.insertBefore(head, sum.nextSibling);
+    }
+
+    var mkt = num((document.getElementById('uTot') || {}).textContent);
+    var footPnl = tbl.querySelector('tfoot td:nth-child(5)');
+    var pnl = footPnl ? num(footPnl.textContent) : 0;
+    var cost = mkt - pnl;
+    var pct = cost ? (pnl / Math.abs(cost)) * 100 : 0;
+    var mEl = document.getElementById('lvPfMkt');
+    var pEl = document.getElementById('lvPfPnl');
+    if (mEl) mEl.textContent = mkt ? mkt.toLocaleString('en-US') + ' đ' : '–';
+    if (pEl){
+      pEl.className = 'val ' + (pnl < 0 ? 'neg' : 'pos');
+      pEl.textContent = (pnl >= 0 ? '+' : '') + pnl.toLocaleString('en-US') + ' đ' +
+        (cost ? ' (' + (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%)' : '');
+    }
+    sum.style.display = mkt ? '' : 'none';
+    head.style.display = mkt ? '' : 'none';
+  }
+
   function decorate(){
     document.querySelectorAll('.main table').forEach(decorateTable);
     addSectionLabels();
     buildSortBar();
     compactCells();
+    buildPortfolioBlocks();
   }
 
   /* ---- Chip sắp xếp cho bảng Tổng quan ---- */
@@ -1767,7 +1841,14 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
   var upd = document.getElementById('updated');
   var updM = document.getElementById('updatedM');
   if (upd && updM){
-    var copy = function(){ updM.textContent = (upd.textContent || '').replace('Cập nhật: ', ''); };
+    var copy = function(){
+      var raw = (upd.textContent || '').replace('Cập nhật: ', '');
+      updM.textContent = raw;
+      var cuSub = document.querySelector('#page-custupdate .cu-sub');
+      if (cuSub && window.matchMedia('(max-width:860px)').matches){
+        cuSub.textContent = 'Cập nhật ' + raw.replace(/^⚠[^·]*·\s*/, '') + ' · Real time';
+      }
+    };
     copy();
     new MutationObserver(copy).observe(upd, {childList:true, characterData:true, subtree:true});
   }
