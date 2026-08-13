@@ -164,18 +164,18 @@
     .page{padding:12px 12px calc(80px + env(safe-area-inset-bottom));background:#F2F5F3;}
     #page-custupdate{background:#F2F5F3;}
 
-    /* ===== KPI: 1 thẻ lớn + 2 thẻ nhỏ ===== */
-    .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+    /* ===== KPI: 3 thẻ trên 1 hàng ===== */
+    .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px;}
     .card{
-      background:#fff;border-radius:14px;box-shadow:0 1px 3px rgba(16,24,40,.07);
-      border:1px solid #EDEFEE;padding:12px 14px;min-width:0;
+      background:#fff;border-radius:13px;box-shadow:0 1px 3px rgba(16,24,40,.07);
+      border:1px solid #EDEFEE;padding:10px 10px 9px;min-width:0;
     }
-    .card:first-child{grid-column:1 / -1;}
-    .card h3{font-size:12px;font-weight:600;color:#7b8783;margin-bottom:4px;letter-spacing:.01em;}
-    .card .big{font-size:19px;font-weight:800;line-height:1.2;white-space:nowrap;
+    .card h3{font-size:10.5px;font-weight:600;color:#8b9490;margin-bottom:3px;
+      line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .card .big{font-size:16px;font-weight:800;line-height:1.2;white-space:nowrap;
       overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;}
-    .card:first-child .big{font-size:27px;}
-    .card .delta{text-align:left;font-size:12.5px;font-weight:700;margin-top:4px;}
+    .card .delta{text-align:left;font-size:10.5px;font-weight:700;margin-top:3px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
     /* ===== cụm 2 cột -> 1 cột ===== */
     .charts,.trade-tables,.cust-grid,.cu-grid,.cu-cards{
@@ -272,27 +272,43 @@
     }
     #custTable tbody tr,#custTable tfoot tr{
       display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
-      column-gap:8px;row-gap:3px;
+      column-gap:8px;row-gap:6px;align-items:end;
       background:none;border:none;border-radius:0;box-shadow:none;
-      margin:0;padding:10px 12px;border-bottom:1px solid #F1F3F2;
+      margin:0;padding:10px 13px;border-bottom:1px solid #F1F3F2;
     }
     #custTable tbody tr:last-child{border-bottom:none;}
     #custTable tbody td,#custTable tfoot td{
-      font-size:11.5px;font-weight:700;gap:1px;
+      font-size:12px;font-weight:700;gap:2px;line-height:1.25;
     }
-    #custTable tbody td::before,#custTable tfoot td::before{font-size:9.5px;color:#9aa39f;}
+    #custTable tbody td::before,#custTable tfoot td::before{
+      font-size:9.5px;font-weight:600;color:#a2aba7;letter-spacing:.02em;
+    }
+    /* hàng 1: tên (trái) — lãi suất (pill) — NAV (phải, số chính) */
     #custTable tbody tr > td:first-child,
     #custTable tfoot tr > td:first-child{
-      grid-column:1 / 3;grid-row:1;font-size:14px;font-weight:800;
+      grid-column:1 / 3;grid-row:1;font-size:15px;font-weight:800;
       padding:0;margin:0;border:none;white-space:nowrap;overflow:hidden;
-      text-overflow:ellipsis;display:block;
+      text-overflow:ellipsis;display:block;align-self:center;font-size:14.5px;
     }
-    #custTable td:nth-child(2){grid-column:3 / 4;grid-row:1;align-items:flex-end;font-size:13px;}
-    #custTable td:nth-child(6){grid-column:4 / 5;grid-row:1;align-items:flex-end;font-size:13px;}
+    #custTable td:nth-child(7){                 /* Lãi suất -> pill */
+      grid-column:3 / 4;grid-row:1;align-items:flex-end;justify-content:center;
+    }
+    #custTable td:nth-child(7)::before{display:none;}
+    #custTable tbody td:nth-child(7){
+      font-size:11px;font-weight:700;color:#5f6b66;
+    }
+    #custTable tbody td:nth-child(7):not(:empty){
+      background:#F2F5F3;border-radius:999px;padding:3px 9px;
+      align-self:center;margin-left:auto;width:max-content;
+    }
+    #custTable td:nth-child(2){                 /* NAV */
+      grid-column:4 / 5;grid-row:1;align-items:flex-end;font-size:15px;font-weight:800;
+    }
+    /* hàng 2: 4 chỉ số phụ */
     #custTable td:nth-child(3){grid-column:1 / 2;grid-row:2;}
     #custTable td:nth-child(4){grid-column:2 / 3;grid-row:2;}
     #custTable td:nth-child(5){grid-column:3 / 4;grid-row:2;align-items:flex-end;}
-    #custTable td:nth-child(7){grid-column:4 / 5;grid-row:2;align-items:flex-end;}
+    #custTable td:nth-child(6){grid-column:4 / 5;grid-row:2;align-items:flex-end;}
     #custTable tfoot tr{background:#EAF6EF;border-top:1px solid #CFE9DA;border-bottom:none;}
     #custTable tfoot td{color:var(--green-dark);}
     #custTable tbody td:empty,#custTable tfoot td:empty{display:block;}
@@ -1558,10 +1574,10 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
   }
   /* Nhãn ngắn cho bảng Tổng quan (màn hình hẹp) */
   var SHORT = {
-    custTable: ['', 'NAV', 'Dư nợ', 'Danh mục', 'Lãi vay', 'Δ hôm nay', 'Lãi suất']
+    custTable: ['', 'NAV', 'Dư nợ', 'Danh mục', 'Lãi vay', 'Δ Nợ + lãi', 'Lãi suất']
   };
   var CHIP = {name:'Tên', nav:'NAV', debt:'Dư nợ', port:'Danh mục',
-              intr:'Lãi vay', delta:'Δ hôm nay', rate:'Lãi suất'};
+              intr:'Lãi vay', delta:'Δ Nợ + lãi', rate:'Lãi suất'};
 
   function decorateTable(tb){
     if (tb.classList.contains('lv-keep')) return;
@@ -1611,7 +1627,7 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
   }
   function compactCells(){
     if (!window.matchMedia('(max-width:860px)').matches) return;
-    var nodes = document.querySelectorAll('#custTable tbody td, #custTable tfoot td, .cards .card .big');
+    var nodes = document.querySelectorAll('#custTable tbody td, #custTable tfoot td, .cards .card .big, .cards .card .delta');
     nodes.forEach(function(td){
       var el = td.querySelector ? (td.querySelector('span') || td) : td;
       var c = compactNum(el.textContent);
