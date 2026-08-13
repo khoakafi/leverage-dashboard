@@ -318,6 +318,78 @@
     #custTable tbody td:empty,#custTable tfoot td:empty{display:block;}
     #custTable tbody td:empty::before,#custTable tfoot td:empty::before{display:none;}
 
+    /* ===== KH Update: dựng giống app khách hàng ===== */
+    #page-custupdate .cu-head{
+      display:block;border-left:none;padding-left:0;margin-bottom:12px;
+    }
+    #page-custupdate .cu-hello{font-size:19px;}
+    #page-custupdate .cu-sub{margin-bottom:10px;}
+    #page-custupdate .cu-head > div:last-child{
+      display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+    }
+    #page-custupdate #uSel{flex:1;min-width:150px;max-width:none !important;}
+    .cu-badge{font-size:11px;}
+
+    /* 1 thẻ NAV lớn + 3 ô nhỏ 1 hàng (như app khách) */
+    #page-custupdate .cu-cards{
+      display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+    }
+    #page-custupdate .cu-card{
+      padding:12px 12px 11px;border-radius:14px;box-shadow:0 1px 3px rgba(16,24,40,.07);
+    }
+    #page-custupdate .cu-card:first-child{grid-column:1 / -1;padding:16px 16px 14px;}
+    #page-custupdate .cu-card .lbl{font-size:10.5px;line-height:1.3;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    #page-custupdate .cu-card:first-child .lbl{font-size:12.5px;}
+    #page-custupdate .cu-card .big{font-size:14px;margin-top:4px;white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;
+      color:var(--green-dark);}
+    #page-custupdate .cu-card:first-child .big{font-size:27px;margin-top:2px;}
+    #page-custupdate .cu-card .sub{font-size:10.5px;margin-top:4px;white-space:nowrap;
+      overflow:hidden;text-overflow:ellipsis;}
+    #page-custupdate .cu-card:first-child .sub{
+      font-size:12px;display:inline-block;padding:4px 10px;border-radius:999px;
+      background:#F1F5F3;margin-top:8px;
+    }
+    #page-custupdate .cu-slider{margin-top:9px;height:5px;}
+    #page-custupdate .cu-slider-lbl{font-size:9px;}
+
+    /* Danh mục nắm giữ: danh sách 3 cột như app khách */
+    #page-custupdate .cu-box > div[style*="overflow"]{max-height:none !important;overflow:visible !important;}
+    #uHold tbody tr{
+      display:grid !important;grid-template-columns:1.05fr .95fr 1.15fr;
+      column-gap:8px;row-gap:3px;align-items:start;
+      background:none;border:none;border-radius:0;box-shadow:none;
+      margin:0;padding:11px 2px;border-bottom:1px solid #F1F3F2;
+    }
+    #uHold tbody tr:last-child{border-bottom:none;}
+    #uHold tbody td{font-size:13.5px;font-weight:700;gap:2px;}
+    #uHold tbody td::before{font-size:9.5px;font-weight:600;color:#a2aba7;}
+    #uHold tbody td:nth-child(1){grid-column:1;grid-row:1;font-size:15px;font-weight:800;
+      border:none;padding:0;margin:0;}
+    #uHold tbody td:nth-child(1)::before{display:none;}
+    #uHold tbody td:nth-child(4){grid-column:1;grid-row:2;font-size:12.5px;font-weight:600;color:#6b7671;}
+    #uHold tbody td:nth-child(3){grid-column:2;grid-row:1;align-items:flex-end;}
+    #uHold tbody td:nth-child(2){grid-column:2;grid-row:2;font-size:12.5px;font-weight:600;color:#8b9490;
+      align-items:flex-end;}
+    #uHold tbody td:nth-child(5){grid-column:3;grid-row:1;align-items:flex-end;}
+    #uHold tbody td:nth-child(6){grid-column:3;grid-row:2;align-items:flex-end;font-size:12.5px;}
+    #uHold tbody td .ticker-logo,#uHold tbody td img{vertical-align:middle;}
+    #uHold tfoot tr{
+      display:grid !important;grid-template-columns:1fr 1fr;gap:6px 10px;
+      background:#EAF6EF;border:1px solid #CFE9DA;border-radius:12px;
+      padding:11px 13px;margin-top:10px;
+    }
+    #uHold tfoot td:nth-child(1){grid-column:1 / -1;}
+
+    /* Cơ cấu danh mục: donut trên, chú thích dưới */
+    #page-custupdate .cu-box > div:has(#uPie){flex-direction:column;gap:10px !important;}
+    #page-custupdate div:has(> #uPie){width:100% !important;max-width:215px;
+      height:215px !important;margin:0 auto;}
+    #uLegend{width:100%;font-size:12.5px;}
+    #page-custupdate .cu-ranges{display:flex;flex-wrap:wrap;gap:6px;}
+    #page-custupdate .cu-ranges button{margin-left:0;font-size:11.5px;padding:5px 10px;}
+
     /* ===== chip sắp xếp ===== */
     .lv-sortbar{
       display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;
@@ -1578,7 +1650,8 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
   }
   /* Nhãn ngắn cho bảng Tổng quan (màn hình hẹp) */
   var SHORT = {
-    custTable: ['', 'NAV', 'Dư nợ', 'Danh mục', 'Lãi vay', 'Δ Nợ + lãi', 'Lãi suất']
+    custTable: ['', 'NAV', 'Dư nợ', 'Danh mục', 'Lãi vay', 'Δ Nợ + lãi', 'Lãi suất'],
+    uHold: ['', 'Giá vốn', 'Giá TT', 'KL', 'Lãi/lỗ', '%']
   };
   var CHIP = {name:'Tên', nav:'NAV', debt:'Dư nợ', port:'Danh mục',
               intr:'Lãi vay', delta:'Δ Nợ + lãi', rate:'Lãi suất'};
@@ -1618,7 +1691,7 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
   /* Rút gọn số lớn cho màn hình hẹp: 1.905.000.000 -> 1,91 tỷ (chỉ ở Tổng quan + KPI,
      các trang chi tiết vẫn giữ số đầy đủ) */
   function compactNum(txt){
-    var t = String(txt == null ? '' : txt).trim();
+    var t = String(txt == null ? '' : txt).trim().replace(/\s*đ$/, '');
     if (!/^-?[\d,]+$/.test(t)) return null;
     var n = Number(t.replace(/,/g, ''));
     if (!isFinite(n) || Math.abs(n) < 1000) return null;
@@ -1631,7 +1704,13 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
   }
   function compactCells(){
     if (!window.matchMedia('(max-width:860px)').matches) return;
-    var nodes = document.querySelectorAll('#custTable tbody td, #custTable tfoot td, .cards .card .big, .cards .card .delta');
+    /* Ô nhỏ ở KH Update: "▲ 1,072,487 đ (-7.51%) hôm nay" -> "▲ -7.51%" */
+    document.querySelectorAll('#page-custupdate .cu-card:not(:first-child) .sub').forEach(function(el){
+      var t = (el.textContent || '').trim();
+      var m = t.match(/^([▲▼]?)\s*[^(]*\(([^)]+)\)/);
+      if (m) el.textContent = (m[1] ? m[1] + ' ' : '') + m[2];
+    });
+    var nodes = document.querySelectorAll('#custTable tbody td, #custTable tfoot td, .cards .card .big, .cards .card .delta, #page-custupdate .cu-cards .cu-card:not(:first-child) .big');
     nodes.forEach(function(td){
       var el = td.querySelector ? (td.querySelector('span') || td) : td;
       var c = compactNum(el.textContent);
