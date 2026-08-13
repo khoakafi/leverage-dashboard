@@ -265,6 +265,39 @@
     #holdTable td{font-size:11.5px;padding:6px 8px;}
     #holdTable td:first-child{max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
+    /* ===== Tổng quan: danh sách gọn để nhìn toàn cảnh ===== */
+    #custTableWrap{
+      background:#fff;border:1px solid #EDEFEE;border-radius:14px;
+      box-shadow:0 1px 3px rgba(16,24,40,.07);overflow:hidden;
+    }
+    #custTable tbody tr,#custTable tfoot tr{
+      display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+      column-gap:8px;row-gap:3px;
+      background:none;border:none;border-radius:0;box-shadow:none;
+      margin:0;padding:10px 12px;border-bottom:1px solid #F1F3F2;
+    }
+    #custTable tbody tr:last-child{border-bottom:none;}
+    #custTable tbody td,#custTable tfoot td{
+      font-size:11.5px;font-weight:700;gap:1px;
+    }
+    #custTable tbody td::before,#custTable tfoot td::before{font-size:9.5px;color:#9aa39f;}
+    #custTable tbody tr > td:first-child,
+    #custTable tfoot tr > td:first-child{
+      grid-column:1 / 3;grid-row:1;font-size:14px;font-weight:800;
+      padding:0;margin:0;border:none;white-space:nowrap;overflow:hidden;
+      text-overflow:ellipsis;display:block;
+    }
+    #custTable td:nth-child(2){grid-column:3 / 4;grid-row:1;align-items:flex-end;font-size:13px;}
+    #custTable td:nth-child(6){grid-column:4 / 5;grid-row:1;align-items:flex-end;font-size:13px;}
+    #custTable td:nth-child(3){grid-column:1 / 2;grid-row:2;}
+    #custTable td:nth-child(4){grid-column:2 / 3;grid-row:2;}
+    #custTable td:nth-child(5){grid-column:3 / 4;grid-row:2;align-items:flex-end;}
+    #custTable td:nth-child(7){grid-column:4 / 5;grid-row:2;align-items:flex-end;}
+    #custTable tfoot tr{background:#EAF6EF;border-top:1px solid #CFE9DA;border-bottom:none;}
+    #custTable tfoot td{color:var(--green-dark);}
+    #custTable tbody td:empty,#custTable tfoot td:empty{display:block;}
+    #custTable tbody td:empty::before,#custTable tfoot td:empty::before{display:none;}
+
     /* ===== chip sắp xếp ===== */
     .lv-sortbar{
       display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;
@@ -1523,11 +1556,18 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
     var arr = c.querySelector('.arr'); if (arr) arr.remove();
     return (c.textContent || '').trim();
   }
+  /* Nhãn ngắn cho bảng Tổng quan (màn hình hẹp) */
+  var SHORT = {
+    custTable: ['', 'NAV', 'Dư nợ', 'Danh mục', 'Lãi vay', 'Δ hôm nay', 'Lãi suất']
+  };
+  var CHIP = {name:'Tên', nav:'NAV', debt:'Dư nợ', port:'Danh mục',
+              intr:'Lãi vay', delta:'Δ hôm nay', rate:'Lãi suất'};
+
   function decorateTable(tb){
     if (tb.classList.contains('lv-keep')) return;
     var ths = tb.querySelectorAll('thead th');
     if (!ths.length) return;
-    var labels = Array.prototype.map.call(ths, headText);
+    var labels = SHORT[tb.id] || Array.prototype.map.call(ths, headText);
     tb.querySelectorAll('tbody tr, tfoot tr').forEach(function(tr){
       var tds = tr.children, i, col = 0;
       for (i = 0; i < tds.length; i++){
@@ -1555,10 +1595,35 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
     });
   }
 
+  /* Rút gọn số lớn cho màn hình hẹp: 1.905.000.000 -> 1,91 tỷ (chỉ ở Tổng quan + KPI,
+     các trang chi tiết vẫn giữ số đầy đủ) */
+  function compactNum(txt){
+    var t = String(txt == null ? '' : txt).trim();
+    if (!/^-?[\d,]+$/.test(t)) return null;
+    var n = Number(t.replace(/,/g, ''));
+    if (!isFinite(n) || Math.abs(n) < 1000) return null;
+    var v, unit;
+    if (Math.abs(n) >= 1e9){ v = n / 1e9; unit = 'tỷ'; }
+    else if (Math.abs(n) >= 1e6){ v = n / 1e6; unit = 'tr'; }
+    else { return Math.round(n / 1e3).toString().replace('.', ',') + ' k'; }
+    var d = Math.abs(v) < 10 ? 2 : 1;
+    return (v.toFixed(d) + ' ' + unit).replace('.', ',');
+  }
+  function compactCells(){
+    if (!window.matchMedia('(max-width:860px)').matches) return;
+    var nodes = document.querySelectorAll('#custTable tbody td, #custTable tfoot td, .cards .card .big');
+    nodes.forEach(function(td){
+      var el = td.querySelector ? (td.querySelector('span') || td) : td;
+      var c = compactNum(el.textContent);
+      if (c){ el.setAttribute('title', el.textContent.trim()); el.textContent = c; }
+    });
+  }
+
   function decorate(){
     document.querySelectorAll('.main table').forEach(decorateTable);
     addSectionLabels();
     buildSortBar();
+    compactCells();
   }
 
   /* ---- Chip sắp xếp cho bảng Tổng quan ---- */
@@ -1577,7 +1642,7 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
         var c = document.createElement('button');
         c.className = 'lv-chip';
         c.dataset.k = th.dataset.k;
-        c.textContent = headText(th);
+        c.textContent = CHIP[th.dataset.k] || headText(th);
         c.addEventListener('click', function(){ th.click(); setTimeout(function(){ decorate(); }, 0); });
         bar.appendChild(c);
       });
@@ -1588,7 +1653,7 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
       var arr = th && th.querySelector('.arr');
       var mark = arr ? (arr.textContent || '').trim() : '';
       c.classList.toggle('active', !!mark);
-      c.textContent = headText(th) + (mark ? ' ' + mark : '');
+      c.textContent = (CHIP[c.dataset.k] || headText(th)) + (mark ? ' ' + mark : '');
     });
   }
 
