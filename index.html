@@ -457,18 +457,18 @@
       justify-content:space-around;align-items:stretch;
       background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
       border-top:1px solid rgba(0,0,0,.07);
-      padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+      padding:4px 4px calc(3px + env(safe-area-inset-bottom) * .5);
       user-select:none;-webkit-user-select:none;
     }
     .lv-bn-item{
-      flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-      padding:6px 0 4px;border:none;background:none;font:inherit;
+      flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+      padding:5px 0 3px;border:none;background:none;font:inherit;
       color:#8a948f;font-size:10.5px;font-weight:600;cursor:pointer;border-radius:12px;
       transition:transform .12s ease,color .15s ease;
     }
     .lv-bn-item:active{transform:scale(.9);}
     .lv-bn-item.active{color:var(--green);}
-    .lv-bn-item svg{width:23px;height:23px;stroke:currentColor;fill:none;
+    .lv-bn-item svg{width:22px;height:22px;stroke:currentColor;fill:none;
       stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 
     /* ===== sheet "Thêm" ===== */
@@ -477,7 +477,7 @@
       transition:opacity .18s ease;}
     .lv-sheet .panel{
       position:absolute;left:0;right:0;bottom:0;background:#fff;
-      border-radius:18px 18px 0 0;padding:10px 14px calc(20px + 68px + env(safe-area-inset-bottom));
+      border-radius:18px 18px 0 0;padding:10px 14px calc(18px + 58px + env(safe-area-inset-bottom) * .5);
       transform:translateY(100%);transition:transform .22s cubic-bezier(.3,.8,.4,1);
       box-shadow:0 -8px 30px rgba(0,0,0,.16);
     }
