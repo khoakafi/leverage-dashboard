@@ -484,6 +484,22 @@
     .lv-tr-detail .d .num{color:#6b7671;font-variant-numeric:tabular-nums;white-space:nowrap;}
     .lv-trade-empty{padding:22px;text-align:center;color:#9aa3a0;font-size:13px;}
 
+    /* ===== điều hướng thời gian của biểu đồ ===== */
+    .lv-chart-nav{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin:0 0 8px;
+    }
+    .lv-chart-nav span{
+      flex:1;text-align:center;font-size:12.5px;font-weight:700;color:#4b5551;
+    }
+    .lv-chart-nav button{
+      width:34px;height:30px;border:1px solid #E4E8E6;background:#fff;border-radius:9px;
+      font:inherit;font-size:17px;line-height:1;color:#4b5551;cursor:pointer;flex:none;
+    }
+    .lv-chart-nav button:disabled{opacity:.35;}
+    .lv-chart-nav button:active:not(:disabled){background:#F1F5F3;}
+    #page-performance .chart-box{padding-top:10px;}
+
     /* ===== chip sắp xếp ===== */
     .lv-sortbar{
       display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;
@@ -1065,28 +1081,56 @@ document.querySelectorAll('#custTable th.sth').forEach(th=>th.addEventListener('
 }));
 
 /* ================= RENDER: stocks bar ================= */
+/* ===== Tiện ích cho biểu đồ trên mobile ===== */
+function lvMobile(){ return window.matchMedia('(max-width:860px)').matches; }
+function lvShort(v){
+  var a=Math.abs(v);
+  if(a>=1e9) return (v/1e9).toFixed(2).replace('.',',')+' tỷ';
+  if(a>=1e6) return (v/1e6).toFixed(1).replace('.',',')+' tr';
+  if(a>=1e3) return Math.round(v/1e3)+' k';
+  return String(Math.round(v));
+}
+/* Chạm vào bất kỳ đâu trên biểu đồ là hiện số (không cần trúng đúng cột/điểm) */
+const LV_TOUCH = {mode:'index', intersect:false};
+const LV_TIP = {
+  enabled:true, backgroundColor:'rgba(20,32,26,.94)', titleFont:{size:12.5},
+  bodyFont:{size:13, weight:'600'}, padding:10, cornerRadius:9, displayColors:true,
+  boxWidth:9, boxHeight:9, caretSize:6
+};
+
 let stocksChart;
 function renderStocks(rows){
   const data = rows.filter(r=>r[0]&&r[0].trim()&&num(r[1])>=0&&r[0].trim().length<=10)
                    .map(r=>({t:r[0].trim(), v:num(r[1])}))
                    .filter(d=>d.v>0 || d.t)
                    .sort((a,b)=>b.v-a.v);
+  const mob = lvMobile();
+  const D = mob ? data.slice(0,10) : data;     // mobile: 10 mã lớn nhất cho dễ đọc
   const ctx=document.getElementById('stocksChart');
+  if (mob){                                     // cao theo số mã -> không bị bóp dẹp
+    const hold = ctx.closest('.chart-holder');
+    if (hold) hold.style.height = Math.max(200, D.length*30+30) + 'px';
+  }
   const cfg={
     type:'bar',
-    data:{labels:data.map(d=>d.t),
-      datasets:[{data:data.map(d=>d.v), backgroundColor:GRAY, barPercentage:.72, categoryPercentage:.85}]},
+    data:{labels:D.map(d=>d.t),
+      datasets:[{data:D.map(d=>d.v), backgroundColor:mob?GREEN:GRAY,
+        barPercentage:mob?.82:.72, categoryPercentage:.85, borderRadius:mob?5:0}]},
     options:{
       indexAxis:'y', maintainAspectRatio:false, responsive:true,
-      layout:{padding:{right:44}},
+      interaction:{mode:'nearest', axis:'y', intersect:false},
+      layout:{padding:{right:mob?58:44}},
       scales:{
-        x:{grid:{display:false}, ticks:{callback:v=>(v/1e6)+'M', color:'#666', font:{size:11}}, border:{display:false}},
-        y:{grid:{display:false}, ticks:{color:'#444', font:{size:11.5}}, border:{display:false}}
+        x:{grid:{display:false}, display:!mob,
+           ticks:{callback:v=>(v/1e6)+'M', color:'#666', font:{size:11}}, border:{display:false}},
+        y:{grid:{display:false}, ticks:{color:'#444', font:{size:mob?12.5:11.5}}, border:{display:false}}
       },
       plugins:{
-        legend:{display:false}, tooltip:{callbacks:{label:c=>fmt(c.raw)}},
-        datalabels:{display:true, anchor:'end', align:'end', color:'#555', font:{size:10.5},
-          formatter:v=>(v/1e6).toFixed(1)+'M'}
+        legend:{display:false},
+        tooltip:Object.assign({}, LV_TIP, {callbacks:{label:c=>fmt(c.raw)+' đ'}}),
+        datalabels:{display:true, anchor:'end', align:'end', color:mob?'#3c4a43':'#555',
+          font:{size:mob?11:10.5, weight:mob?'700':'400'},
+          formatter:v=>mob?lvShort(v):((v/1e6).toFixed(1)+'M')}
       }
     }
   };
@@ -1106,8 +1150,9 @@ function renderInterest(rows){
     if(n) __navBatch.push({n, d, nav:cellNum(r[1]), debt:cellNum(r[3]), port:cellNum(r[4])});
   }
   renderUpdatePage();
-  const pts=[...byDate.entries()].sort((a,b)=>a[0]-b[0]);
-  renderRevenue(pts);
+  const ptsAll=[...byDate.entries()].sort((a,b)=>a[0]-b[0]);
+  renderRevenue(ptsAll);
+  const pts = lvMobile() ? ptsAll.slice(-180) : ptsAll;   // mobile: ~6 tháng gần nhất
   let prevM=-1;
   const labels=pts.map(([t])=>{
     const d=new Date(t);
@@ -1128,10 +1173,11 @@ function renderInterest(rows){
         y:{grid:{color:'#EFEFEF'}, border:{display:false},
            ticks:{color:'#666', font:{size:11}, callback:v=>(v/1e6)+'M'}}
       },
+      interaction:LV_TOUCH,
       plugins:{legend:{display:false},
-        tooltip:{callbacks:{
+        tooltip:Object.assign({}, LV_TIP, {callbacks:{
           title:items=>{const d=new Date(pts[items[0].dataIndex][0]);return d.toLocaleDateString('vi-VN');},
-          label:c=>fmt(c.raw)}}}
+          label:c=>'Lãi vay: '+fmt(c.raw)+' đ'}})}
     }
   };
   if(interestChart){interestChart.data=cfg.data; interestChart.update();} else interestChart=new Chart(ctx,cfg);
@@ -1139,11 +1185,31 @@ function renderInterest(rows){
 
 /* ================= RENDER: monthly trade bars ================= */
 let tradeChart;
+let __tradeRows=null, __tradeOff=0;      // off = số "trang" 12 tháng lùi về quá khứ
+const TRADE_WIN = 12;
 function renderTradeChart(rows){
-  const data=rows.slice(1)
+  if (rows) __tradeRows = rows; else rows = __tradeRows;
+  if (!rows) return;
+  const all=rows.slice(1)
     .filter(r=>parseMDY(r[0]))
     .map(r=>({d:parseMDY(r[0]), buy:num(r[1]), sell:num(r[2]), trade:num(r[3])}))
     .sort((a,b)=>a.d-b.d);
+
+  /* Mobile: chỉ vẽ 12 tháng một lần, bấm ‹ › để xem quá khứ */
+  const mob = lvMobile();
+  let data = all;
+  if (mob && all.length > TRADE_WIN){
+    const maxOff = Math.max(0, Math.ceil(all.length / TRADE_WIN) - 1);
+    __tradeOff = Math.min(Math.max(0, __tradeOff), maxOff);
+    let end = all.length - __tradeOff * TRADE_WIN;
+    let start = Math.max(0, end - TRADE_WIN);
+    data = all.slice(start, end);
+    buildTradeNav(data, __tradeOff, maxOff);
+  } else {
+    const nav = document.getElementById('lvTradeNav');
+    if (nav) nav.style.display = 'none';
+  }
+
   const labels=data.map(x=>MONTHS[x.d.getMonth()]+' '+x.d.getFullYear());
   const lbl=v=> v>=5e8 ? Math.round(v/1e9)+'bn' : '';
   const ctx=document.getElementById('tradeChart');
@@ -1158,22 +1224,55 @@ function renderTradeChart(rows){
     options:{
       maintainAspectRatio:false, responsive:true,
       layout:{padding:{top:18}},
+      interaction:LV_TOUCH,
       scales:{
         x:{grid:{display:false}, border:{display:false},
-           ticks:{color:'#666', font:{size:11}, maxRotation:0, autoSkip:false,
-             callback:function(v,i){const d=data[i].d; return d.getMonth()%2===0?MONTHS[d.getMonth()]+' '+d.getFullYear():'';}}},
+           ticks:{color:'#666', font:{size:mob?10.5:11}, maxRotation:0, autoSkip:false,
+             callback:function(v,i){const d=data[i].d;
+               if(mob) return 'T'+(d.getMonth()+1);
+               return d.getMonth()%2===0?MONTHS[d.getMonth()]+' '+d.getFullYear():'';}}},
         y:{grid:{color:'#F0F0F0'}, border:{display:false},
            ticks:{color:'#666', font:{size:11}, callback:v=>(v/1e9)+'bn'}}
       },
       plugins:{
-        legend:{position:'top', align:'start', labels:{boxWidth:11, boxHeight:11, font:{size:12}, color:'#444'}},
-        tooltip:{callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)}},
-        datalabels:{display:true, anchor:'end', align:'end', offset:-2, color:'#555', font:{size:9.5},
+        legend:{position:'top', align:'start',
+          labels:{boxWidth:11, boxHeight:11, font:{size:mob?11:12}, color:'#444',
+                  padding:mob?8:10, usePointStyle:mob}},
+        tooltip:Object.assign({}, LV_TIP, {callbacks:{label:c=>c.dataset.label+': '+fmt(c.raw)+' đ'}}),
+        datalabels:{display:!mob, anchor:'end', align:'end', offset:-2, color:'#555', font:{size:9.5},
           formatter:lbl}
       }
     }
   };
-  if(tradeChart){tradeChart.data=cfg.data; tradeChart.update();} else tradeChart=new Chart(ctx,cfg);
+  if(tradeChart){tradeChart.data=cfg.data; tradeChart.options=cfg.options; tradeChart.update();}
+  else tradeChart=new Chart(ctx,cfg);
+}
+
+/* Thanh ‹ 12 tháng › cho biểu đồ giao dịch (chỉ mobile) */
+function buildTradeNav(data, off, maxOff){
+  const holder=document.getElementById('tradeChartHolder');
+  if(!holder) return;
+  let nav=document.getElementById('lvTradeNav');
+  if(!nav){
+    nav=document.createElement('div');
+    nav.id='lvTradeNav'; nav.className='lv-chart-nav';
+    nav.innerHTML='<button data-d="1" aria-label="Lùi">‹</button>'+
+                  '<span id="lvTradeRange"></span>'+
+                  '<button data-d="-1" aria-label="Tiến">›</button>';
+    holder.parentNode.insertBefore(nav, holder);
+    nav.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click', function(){
+        __tradeOff += Number(b.dataset.d);
+        renderTradeChart();
+      });
+    });
+  }
+  nav.style.display='';
+  const a=data[0], z=data[data.length-1];
+  const f=x=> 'T'+(x.d.getMonth()+1)+'/'+String(x.d.getFullYear()).slice(2);
+  document.getElementById('lvTradeRange').textContent = a? (f(a)+' – '+f(z)) : '';
+  nav.querySelector('[data-d="1"]').disabled  = off>=maxOff;
+  nav.querySelector('[data-d="-1"]').disabled = off<=0;
 }
 
 /* ================= RENDER: buy/sell tables ================= */
