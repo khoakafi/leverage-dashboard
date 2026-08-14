@@ -418,6 +418,72 @@
     #page-custupdate .cu-ranges{display:flex;flex-wrap:wrap;gap:6px;}
     #page-custupdate .cu-ranges button{margin-left:0;font-size:11.5px;padding:5px 10px;}
 
+    /* ===== Giao dịch: bảng tổng quan Mua/Bán gộp theo mã ===== */
+    #page-performance .trade-tables{display:none;}
+    .lv-trade{margin-top:12px;}
+    .lv-trade-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+    .lv-trade-tiles .tile{
+      background:#fff;border:1px solid #EDEFEE;border-radius:13px;
+      box-shadow:0 1px 3px rgba(16,24,40,.07);padding:11px 12px;min-width:0;
+    }
+    .lv-trade-tiles .tile .lbl{
+      font-size:11px;font-weight:700;letter-spacing:.02em;display:flex;align-items:center;gap:5px;
+    }
+    .lv-trade-tiles .tile .lbl::before{content:"";width:7px;height:7px;border-radius:2px;}
+    .lv-trade-tiles .tile.buy .lbl{color:var(--green-dark);}
+    .lv-trade-tiles .tile.buy .lbl::before{background:var(--green);}
+    .lv-trade-tiles .tile.sell .lbl{color:var(--red);}
+    .lv-trade-tiles .tile.sell .lbl::before{background:var(--red);}
+    .lv-trade-tiles .tile .val{
+      display:block;font-size:19px;font-weight:800;margin-top:4px;
+      font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .lv-trade-tiles .tile.buy .val{color:var(--green-dark);}
+    .lv-trade-tiles .tile.sell .val{color:var(--red);}
+    .lv-trade-tiles .tile .sub{display:block;font-size:11px;color:#8b9490;margin-top:3px;}
+
+    .lv-seg{
+      display:flex;background:#EDF1EF;border-radius:11px;padding:3px;margin-bottom:10px;
+    }
+    .lv-seg button{
+      flex:1;border:none;background:none;font:inherit;font-size:13px;font-weight:700;
+      color:#6b7671;padding:7px 0;border-radius:9px;cursor:pointer;
+    }
+    .lv-seg button.on{background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.12);color:var(--green-dark);}
+    .lv-seg button.on[data-s="sell"]{color:var(--red);}
+
+    .lv-trade-list{
+      background:#fff;border:1px solid #EDEFEE;border-radius:14px;
+      box-shadow:0 1px 3px rgba(16,24,40,.07);overflow:hidden;
+    }
+    .lv-tr{
+      display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;column-gap:10px;
+      padding:11px 13px;border-bottom:1px solid #F1F3F2;cursor:pointer;
+    }
+    .lv-trade-list .lv-tr:last-child,
+    .lv-trade-list .lv-tr-detail:last-child{border-bottom:none;}
+    .lv-tr .tk{font-size:15px;font-weight:800;min-width:46px;}
+    .lv-tr .mid{display:flex;flex-direction:column;gap:1px;min-width:0;}
+    .lv-tr .mid .v{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums;}
+    .lv-tr .mid .s{font-size:10.5px;color:#8b9490;}
+    .lv-tr .amt{display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+    .lv-tr .amt .v{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums;}
+    .lv-tr .amt .s{font-size:10.5px;color:#8b9490;font-variant-numeric:tabular-nums;}
+    .lv-trade-list.buy .lv-tr .amt .v{color:var(--green-dark);}
+    .lv-trade-list.sell .lv-tr .amt .v{color:var(--red);}
+    .lv-tr .caret{font-size:10px;color:#b6bfba;margin-left:2px;transition:transform .15s ease;}
+    .lv-tr.open .caret{transform:rotate(90deg);}
+    .lv-tr-detail{display:none;background:#F8FAF9;border-bottom:1px solid #F1F3F2;padding:4px 13px 8px;}
+    .lv-tr-detail.open{display:block;}
+    .lv-tr-detail .d{
+      display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:12px;
+      border-bottom:1px dashed #E7ECE9;
+    }
+    .lv-tr-detail .d:last-child{border-bottom:none;}
+    .lv-tr-detail .d .who{color:#4b5551;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .lv-tr-detail .d .num{color:#6b7671;font-variant-numeric:tabular-nums;white-space:nowrap;}
+    .lv-trade-empty{padding:22px;text-align:center;color:#9aa3a0;font-size:13px;}
+
     /* ===== chip sắp xếp ===== */
     .lv-sortbar{
       display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;
@@ -1796,12 +1862,130 @@ if(sessionStorage.getItem('lv_auth')==='1') start();
     head.style.display = mkt ? '' : 'none';
   }
 
+  /* ---- Giao dịch: gộp lệnh theo mã để nhìn phát ra ngay ---- */
+  function shortVND(n){
+    var a = Math.abs(n);
+    if (a >= 1e9) return (n / 1e9).toFixed(2).replace('.', ',') + ' tỷ';
+    if (a >= 1e6) return (n / 1e6).toFixed(1).replace('.', ',') + ' tr';
+    if (a >= 1e3) return Math.round(n / 1e3) + ' k';
+    return String(Math.round(n));
+  }
+  function grp(n){ return Math.round(n).toLocaleString('en-US'); }
+
+  function readTrades(id){
+    var out = [];
+    document.querySelectorAll('#' + id + ' tbody tr').forEach(function(tr){
+      var td = tr.children;
+      if (td.length < 5 || td[0].hasAttribute('colspan')) return;
+      var tick = (td[1].textContent || '').trim();
+      if (!tick || tick === '-') return;
+      out.push({
+        cust: (td[0].textContent || '').trim(),
+        tick: tick,
+        price: num(td[2].textContent),
+        vol: num(td[3].textContent),
+        val: num(td[4].textContent)
+      });
+    });
+    return out;
+  }
+  function groupTrades(rows){
+    var m = {};
+    rows.forEach(function(r){
+      if (!m[r.tick]) m[r.tick] = {tick:r.tick, vol:0, val:0, custs:{}, n:0, items:[]};
+      var g = m[r.tick];
+      g.vol += r.vol; g.val += r.val; g.custs[r.cust] = 1; g.n++; g.items.push(r);
+    });
+    return Object.keys(m).map(function(k){ return m[k]; })
+      .sort(function(a,b){ return b.val - a.val; });
+  }
+  function renderTradeList(el, groups, side){
+    el.className = 'lv-trade-list ' + side;
+    if (!groups.length){ el.innerHTML = '<div class="lv-trade-empty">Không có lệnh nào</div>'; return; }
+    el.innerHTML = groups.map(function(g, i){
+      var nc = Object.keys(g.custs).length;
+      var avg = g.vol ? g.val / g.vol : 0;
+      var detail = g.items.map(function(it){
+        return '<div class="d"><span class="who">' + it.cust + '</span>' +
+               '<span class="num">' + grp(it.vol) + ' × ' + grp(it.price) + ' = ' + shortVND(it.val) + '</span></div>';
+      }).join('');
+      return '<div class="lv-tr" data-i="' + i + '">' +
+               '<div class="tk">' + g.tick + '</div>' +
+               '<div class="mid"><span class="v">' + grp(g.vol) + ' CP</span>' +
+               '<span class="s">' + nc + ' KH · ' + g.n + ' lệnh</span></div>' +
+               '<div class="amt"><span class="v">' + shortVND(g.val) + '</span>' +
+               '<span class="s">TB ' + grp(avg) + '</span></div>' +
+               '<span class="caret">▶</span>' +
+             '</div>' +
+             '<div class="lv-tr-detail" data-i="' + i + '">' + detail + '</div>';
+    }).join('');
+    el.querySelectorAll('.lv-tr').forEach(function(row){
+      row.addEventListener('click', function(){
+        var d = el.querySelector('.lv-tr-detail[data-i="' + row.dataset.i + '"]');
+        row.classList.toggle('open');
+        if (d) d.classList.toggle('open');
+      });
+    });
+  }
+  function buildTradeOverview(){
+    if (!window.matchMedia('(max-width:860px)').matches) return;
+    var page = document.getElementById('page-performance');
+    if (!page) return;
+    var tables = page.querySelector('.trade-tables');
+    if (!tables) return;
+
+    var buy = readTrades('buyTable'), sell = readTrades('sellTable');
+    var sig = buy.length + '|' + sell.length + '|' +
+      (buy[0] ? buy[0].tick + buy[0].val : '') + (sell[0] ? sell[0].tick + sell[0].val : '');
+
+    var box = page.querySelector('.lv-trade');
+    if (!box){
+      box = document.createElement('div');
+      box.className = 'lv-trade';
+      box.innerHTML =
+        '<div class="lv-trade-tiles">' +
+          '<div class="tile buy"><span class="lbl">MUA</span><span class="val" id="lvBuyVal">–</span>' +
+          '<span class="sub" id="lvBuySub"></span></div>' +
+          '<div class="tile sell"><span class="lbl">BÁN</span><span class="val" id="lvSellVal">–</span>' +
+          '<span class="sub" id="lvSellSub"></span></div>' +
+        '</div>' +
+        '<div class="lv-seg"><button class="on" data-s="buy">Mua</button>' +
+        '<button data-s="sell">Bán</button></div>' +
+        '<div class="lv-trade-list buy" id="lvTradeList"></div>';
+      tables.parentNode.insertBefore(box, tables);
+      box.querySelectorAll('.lv-seg button').forEach(function(b){
+        b.addEventListener('click', function(){
+          box.querySelectorAll('.lv-seg button').forEach(function(x){ x.classList.remove('on'); });
+          b.classList.add('on');
+          box.dataset.side = b.dataset.s;
+          renderTradeList(document.getElementById('lvTradeList'),
+                          groupTrades(readTrades(b.dataset.s === 'buy' ? 'buyTable' : 'sellTable')),
+                          b.dataset.s);
+        });
+      });
+    }
+    if (box.dataset.sig === sig) return;      // dữ liệu chưa đổi -> khỏi vẽ lại
+    box.dataset.sig = sig;
+
+    var sum = function(a){ return a.reduce(function(s,r){ return s + r.val; }, 0); };
+    var vol = function(a){ return a.reduce(function(s,r){ return s + r.vol; }, 0); };
+    document.getElementById('lvBuyVal').textContent = shortVND(sum(buy));
+    document.getElementById('lvBuySub').textContent = grp(vol(buy)) + ' CP · ' + buy.length + ' lệnh';
+    document.getElementById('lvSellVal').textContent = shortVND(sum(sell));
+    document.getElementById('lvSellSub').textContent = grp(vol(sell)) + ' CP · ' + sell.length + ' lệnh';
+
+    var side = box.dataset.side || 'buy';
+    renderTradeList(document.getElementById('lvTradeList'),
+                    groupTrades(side === 'buy' ? buy : sell), side);
+  }
+
   function decorate(){
     document.querySelectorAll('.main table').forEach(decorateTable);
     addSectionLabels();
     buildSortBar();
     compactCells();
     buildPortfolioBlocks();
+    buildTradeOverview();
   }
 
   /* ---- Chip sắp xếp cho bảng Tổng quan ---- */
