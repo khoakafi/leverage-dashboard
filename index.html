@@ -750,10 +750,14 @@
   .u-td-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:9px;}
   .u-td-sum{font-size:12.5px;color:#6b7671;font-weight:600;font-variant-numeric:tabular-nums;}
   .u-td-sum .b{color:var(--green-dark);} .u-td-sum .s{color:var(--red);}
-  .u-td-btn{margin-left:auto;font:inherit;font-size:12.5px;font-weight:700;color:var(--green-dark);
-    background:#E9F6EE;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;white-space:nowrap;}
-  .u-td-btn:hover{background:#DCF0E4;}
-  #uTdBox.an #uTdBody{display:none;}
+  .u-tick{flex:none;width:30px;height:30px;padding:0;border-radius:50%;cursor:pointer;
+    border:1.5px solid #D5DBD7;background:#fff;display:inline-flex;align-items:center;justify-content:center;
+    transition:background .12s,border-color .12s;}
+  .u-tick svg{width:15px;height:15px;fill:none;stroke:#C2CAC6;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;}
+  .u-tick.on{background:var(--green);border-color:var(--green);}
+  .u-tick.on svg{stroke:#fff;}
+  .u-tick:hover{border-color:var(--green);}
+  #uTdBox.an{display:none;}
   .u-side{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.02em;
     padding:2px 7px;border-radius:6px;margin-right:8px;vertical-align:1px;}
   .u-side.b{background:#E9F6EE;color:var(--green-dark);}
@@ -1125,6 +1129,10 @@
       <div class="cu-sub">Tổng quan tài khoản của bạn</div>
     </div>
     <div style="display:flex;gap:12px;align-items:center;">
+      <button type="button" class="u-tick on" id="uTdTick" aria-pressed="true"
+        title="Bật/tắt khối Giao dịch hôm nay" aria-label="Bật/tắt khối Giao dịch hôm nay">
+        <svg viewBox="0 0 24 24"><path d="M5 12.6l4.6 4.6L19 7.4"/></svg>
+      </button>
       <span class="cu-badge">Dữ liệu Real Time</span>
       <select id="uSel" style="max-width:220px;font:inherit;padding:8px 12px;border-radius:8px;border:none;background:var(--green);color:#fff;font-weight:700;"></select>
     </div>
@@ -1167,7 +1175,6 @@
     <div class="u-td-head">
       <div class="cu-title" style="margin-bottom:0;" id="uTdTitle">Giao dịch hôm nay</div>
       <div class="u-td-sum" id="uTdSum"></div>
-      <button type="button" class="u-td-btn" id="uTdBtn" aria-expanded="true">Ẩn</button>
     </div>
     <div id="uTdBody" style="overflow:auto;">
       <table id="uTrade">
@@ -2175,15 +2182,17 @@ function renderUpdateTrades(name){
     ? `Mua <b class="b">${fmt(mua)} đ</b> · Bán <b class="s">${fmt(ban)} đ</b>`
     : '<span style="color:#9aa3a0;">Không có lệnh</span>';
 }
+/* Tick tròn ở đầu tab: tắt là giấu NGUYÊN khối Giao dịch hôm nay (cả tiêu đề),
+   bật lại là hiện. Nhớ lựa chọn trong máy. */
 (function(){
-  const box=document.getElementById('uTdBox'), btn=document.getElementById('uTdBtn');
-  if(!box||!btn) return;
+  const box=document.getElementById('uTdBox'), tick=document.getElementById('uTdTick');
+  if(!box||!tick) return;
   const KHOA='lv_utd_an';
   const ve=()=>{ const an=box.classList.contains('an');
-    btn.textContent=an?'Hiện':'Ẩn'; btn.setAttribute('aria-expanded', an?'false':'true'); };
+    tick.classList.toggle('on', !an); tick.setAttribute('aria-pressed', an?'false':'true'); };
   try{ if(localStorage.getItem(KHOA)==='1') box.classList.add('an'); }catch(e){}
   ve();
-  btn.addEventListener('click',()=>{
+  tick.addEventListener('click',()=>{
     box.classList.toggle('an');
     try{ localStorage.setItem(KHOA, box.classList.contains('an')?'1':'0'); }catch(e){}
     ve();
