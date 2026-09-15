@@ -746,6 +746,19 @@
   .cu-ranges button{border:1px solid #E5E5E5;background:#F5F5F5;color:#777;font:inherit;
     font-size:12px;font-weight:600;padding:5px 13px;border-radius:8px;cursor:pointer;margin-left:6px;}
   .cu-ranges button.active{background:var(--green);color:#fff;border-color:var(--green);}
+  /* ===== KH Update: giao dịch hôm nay ===== */
+  .u-td-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:9px;}
+  .u-td-sum{font-size:12.5px;color:#6b7671;font-weight:600;font-variant-numeric:tabular-nums;}
+  .u-td-sum .b{color:var(--green-dark);} .u-td-sum .s{color:var(--red);}
+  .u-td-btn{margin-left:auto;font:inherit;font-size:12.5px;font-weight:700;color:var(--green-dark);
+    background:#E9F6EE;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;white-space:nowrap;}
+  .u-td-btn:hover{background:#DCF0E4;}
+  #uTdBox.an #uTdBody{display:none;}
+  .u-side{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.02em;
+    padding:2px 7px;border-radius:6px;margin-right:8px;vertical-align:1px;}
+  .u-side.b{background:#E9F6EE;color:var(--green-dark);}
+  .u-side.s{background:#FDECEE;color:var(--red);}
+  #uTrade tbody td{font-variant-numeric:tabular-nums;}
   /* ===== lịch sử giao dịch ===== */
   .hist-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:11px;}
   .hist-search{position:relative;flex:1;min-width:230px;max-width:380px;}
@@ -1147,6 +1160,21 @@
         </div>
         <div id="uLegend" style="flex:1;font-size:12.5px;"></div>
       </div>
+    </div>
+  </div>
+
+  <div class="cu-box" style="margin-top:14px;" id="uTdBox">
+    <div class="u-td-head">
+      <div class="cu-title" style="margin-bottom:0;" id="uTdTitle">Giao dịch hôm nay</div>
+      <div class="u-td-sum" id="uTdSum"></div>
+      <button type="button" class="u-td-btn" id="uTdBtn" aria-expanded="true">Ẩn</button>
+    </div>
+    <div id="uTdBody" style="overflow:auto;">
+      <table id="uTrade">
+        <thead><tr><th>Lệnh</th><th>Giá</th><th>Khối lượng</th><th>Giá trị</th></tr></thead>
+        <tbody><tr><td colspan="4" class="loading">Đang tải…</td></tr></tbody>
+        <tfoot></tfoot>
+      </table>
     </div>
   </div>
 
@@ -1584,6 +1612,8 @@ function loadTrans(rows){
     .filter(t=>t.d && t.cust && t.ticker && t.ticker!=='-' && t.value>0 && (t.side==='BUY'||t.side==='SELL'));
   renderTransTables();
   renderCustomerPage();
+  /* Trans_All về sau khi trang KH Update đã vẽ -> vẽ lại riêng phần giao dịch hôm nay */
+  try { const u=document.getElementById('uSel'); if(u&&u.value) renderUpdateTrades(u.value); } catch(e){}
 }
 
 /* ================= INSIGHT: lãi vay theo tháng (từ NAV - Batch, lãi thực tế từng ngày) ================= */
@@ -2080,6 +2110,7 @@ function renderUpdatePage(){
         tooltip:{callbacks:{label:c=>c.label+': '+fmt(c.raw)+' đ'}},
         datalabels:{display:false}}}};
   if(uPie){uPie.data=cfg.data;uPie.update();}else uPie=new Chart(ctx,cfg);
+  renderUpdateTrades(name);
   renderNavChart(hist);
 }
 function renderNavChart(hist){
@@ -2107,6 +2138,57 @@ document.querySelectorAll('#cuRanges button').forEach(b=>b.addEventListener('cli
   document.querySelectorAll('#cuRanges button').forEach(x=>x.classList.remove('active'));
   b.classList.add('active'); cuRange=+b.dataset.r; renderNavChart(__cuHist);
 }));
+/* ===== KH Update: giao dịch hôm nay của chính khách đang xem =====
+   Cùng nguồn với bảng "Giao dịch trong ngày" ở trang Khách hàng (sheet Trans_All),
+   gộp lệnh trùng mã + giá. Có nút Ẩn/Hiện, nhớ lựa chọn trong máy. */
+function renderUpdateTrades(name){
+  const tb=document.querySelector('#uTrade tbody'); if(!tb) return;
+  const tf=document.querySelector('#uTrade tfoot');
+  const tt=document.getElementById('uTdTitle'), sm=document.getElementById('uTdSum');
+  if(!allTrans.length){
+    tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#999;">Đang tải…</td></tr>';
+    tf.innerHTML=''; if(sm) sm.textContent=''; return;
+  }
+  const maxT=Math.max(...allTrans.map(t=>t.d.getTime()));
+  if(tt) tt.textContent='Giao dịch hôm nay · '+new Date(maxT).toLocaleDateString('vi-VN');
+  const rows=allTrans.filter(t=>t.cust===name && t.d.getTime()===maxT);
+  const map=new Map();
+  for(const t of rows){
+    const k=t.side+'|'+t.ticker+'|'+t.price;
+    if(map.has(k)){ const m=map.get(k); m.vol+=t.vol; m.value+=t.value; }
+    else map.set(k,{...t});
+  }
+  const list=[...map.values()].sort((a,b)=>b.value-a.value);
+  tb.innerHTML=list.length?list.map(t=>{
+    const mua=t.side==='BUY';
+    return `<tr>
+      <td><span class="u-side ${mua?'b':'s'}">${mua?'MUA':'BÁN'}</span><b>${t.ticker}</b></td>
+      <td class="${mua?'price-buy':'price-sell'}">${fmt(t.price)} đ</td>
+      <td>${fmt(t.vol)}</td><td>${fmt(t.value)} đ</td></tr>`;
+  }).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">Hôm nay chưa có lệnh nào</td></tr>';
+  const tong=s=>list.filter(t=>t.side===s).reduce((a,t)=>a+t.value,0);
+  const mua=tong('BUY'), ban=tong('SELL');
+  tf.innerHTML=list.length?
+    `<tr><td>Tổng ${list.length} lệnh</td><td></td><td>${fmt(list.reduce((a,t)=>a+t.vol,0))}</td>
+     <td>${fmt(mua+ban)} đ</td></tr>`:'';
+  if(sm) sm.innerHTML=list.length
+    ? `Mua <b class="b">${fmt(mua)} đ</b> · Bán <b class="s">${fmt(ban)} đ</b>`
+    : '<span style="color:#9aa3a0;">Không có lệnh</span>';
+}
+(function(){
+  const box=document.getElementById('uTdBox'), btn=document.getElementById('uTdBtn');
+  if(!box||!btn) return;
+  const KHOA='lv_utd_an';
+  const ve=()=>{ const an=box.classList.contains('an');
+    btn.textContent=an?'Hiện':'Ẩn'; btn.setAttribute('aria-expanded', an?'false':'true'); };
+  try{ if(localStorage.getItem(KHOA)==='1') box.classList.add('an'); }catch(e){}
+  ve();
+  btn.addEventListener('click',()=>{
+    box.classList.toggle('an');
+    try{ localStorage.setItem(KHOA, box.classList.contains('an')?'1':'0'); }catch(e){}
+    ve();
+  });
+})();
 function renderCustTrades(name){
   const buyT=document.querySelector('#cBuyTable tbody'), sellT=document.querySelector('#cSellTable tbody');
   if(!allTrans.length){ buyT.innerHTML=sellT.innerHTML='<tr><td colspan="4" style="text-align:center;color:#999;">Đang tải…</td></tr>'; return; }
