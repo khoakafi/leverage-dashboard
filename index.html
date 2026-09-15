@@ -674,6 +674,7 @@
     .lv-sheet-item.active{background:#E9F6EE;color:var(--green-dark);font-weight:700;}
     .lv-sheet-item svg{width:21px;height:21px;stroke:currentColor;fill:none;
       stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;}
+
   }
 
   /* ===== password gate ===== */
@@ -745,6 +746,71 @@
   .cu-ranges button{border:1px solid #E5E5E5;background:#F5F5F5;color:#777;font:inherit;
     font-size:12px;font-weight:600;padding:5px 13px;border-radius:8px;cursor:pointer;margin-left:6px;}
   .cu-ranges button.active{background:var(--green);color:#fff;border-color:var(--green);}
+  /* ===== lịch sử giao dịch ===== */
+  .hist-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:11px;}
+  .hist-search{position:relative;flex:1;min-width:230px;max-width:380px;}
+  .hist-search>svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);
+    width:15px;height:15px;fill:none;stroke:#9AA3A0;stroke-width:2;stroke-linecap:round;pointer-events:none;}
+  .hist-search input{width:100%;font:inherit;font-size:13.5px;padding:8px 30px 8px 33px;
+    border:1px solid #D8DEDA;border-radius:8px;background:#fff;color:var(--text);}
+  .hist-search input::-webkit-search-cancel-button{display:none;}
+  .hist-search input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(24,160,72,.13);}
+  .hist-search button{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:none;
+    border:none;background:none;font:inherit;font-size:17px;line-height:1;color:#9AA3A0;cursor:pointer;padding:3px 6px;}
+  .hist-search.has button{display:block;}
+  .hist-seg{display:flex;background:#EFF2F0;border-radius:8px;padding:3px;gap:2px;}
+  .hist-seg button{border:none;background:none;font:inherit;font-size:12.5px;font-weight:600;
+    color:#65726C;padding:6px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;}
+  .hist-seg button.on{background:#fff;color:var(--green-dark);box-shadow:0 1px 2px rgba(0,0,0,.13);}
+  .hist-bar select{font:inherit;font-size:12.5px;padding:7px 9px;border:1px solid #D8DEDA;
+    border-radius:8px;background:#fff;color:#444;cursor:pointer;}
+  .hist-sum{display:flex;align-items:center;gap:20px;background:#fff;border:1px solid #E4EAE6;
+    border-left:4px solid var(--green);border-radius:10px;padding:12px 18px;margin-bottom:12px;
+    box-shadow:var(--card-shadow);}
+  .hist-sum .l{display:block;font-size:11.5px;font-weight:600;color:#8b9490;margin-bottom:1px;}
+  .hist-sum .l b{color:var(--green-dark);font-weight:700;}
+  .hist-sum .hs-main{min-width:215px;}
+  .hist-sum .hs-main .v{display:block;font-size:27px;font-weight:800;line-height:1.2;
+    font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .hist-sum .hs-main .s{font-size:12px;font-weight:600;color:#8b9490;}
+  .hist-sum .hs-cols{display:flex;gap:28px;margin-left:auto;}
+  .hist-sum .hs-cols .v{display:block;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  #hWrap{max-height:calc(100vh - 252px);}
+  #histTable tbody tr:hover{background:#F6FAF7;}
+  #histTable tbody td{font-variant-numeric:tabular-nums;}
+  #histTable .cn{cursor:pointer;}
+  #histTable .cn:hover{color:var(--green-dark);text-decoration:underline;}
+  .h-open{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.02em;color:var(--green-dark);
+    background:#E4F4EA;border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:1px;}
+  .h-pct{font-size:11.5px;font-weight:600;opacity:.72;margin-left:6px;}
+  .hist-more{text-align:center;padding:12px 0 8px;color:#8b9490;font-size:12.5px;}
+  .hist-more button{font:inherit;font-size:13px;font-weight:700;color:var(--green-dark);
+    background:#E9F6EE;border:none;border-radius:8px;padding:8px 18px;cursor:pointer;margin-right:12px;}
+  .hist-more button:hover{background:#DCF0E4;}
+  @media (max-width:860px){
+  /* ===== lịch sử giao dịch ===== */
+  .hist-bar{gap:8px;margin-bottom:10px;}
+  .hist-search{flex:1 0 100%;max-width:none;}
+  .hist-search input{font-size:15px;padding:10px 32px 10px 34px;border-radius:10px;}
+  .hist-seg{flex:1 0 100%;border-radius:10px;}
+  .hist-seg button{flex:1;padding:9px 0;font-size:13.5px;}
+  .hist-bar select{flex:1;min-width:0;padding:9px 8px;border-radius:10px;font-size:12.5px;}
+  .hist-sum{flex-direction:column;align-items:stretch;gap:11px;padding:13px 15px;
+    border:1px solid #EDEFEE;border-left:4px solid var(--green);border-radius:14px;
+    box-shadow:0 1px 3px rgba(16,24,40,.07);}
+  .hist-sum .hs-main{min-width:0;}
+  .hist-sum .hs-main .v{font-size:24px;}
+  .hist-sum{position:sticky;top:0;z-index:6;}
+  .hist-sum .hs-cols{margin-left:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px 14px;border-top:1px solid #F0F2F1;padding-top:10px;}
+  .hist-sum .hs-cols .l{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hist-sum .hs-cols .v{font-size:14px;overflow:hidden;text-overflow:ellipsis;}
+  #hWrap{max-height:none;}
+  /* thẻ gọn: bỏ 2 cột ít dùng, dòng tổng đã nằm ở thanh trên */
+  #histTable tbody td:nth-child(5),#histTable tbody td:nth-child(7){display:none;}
+  #histTable tfoot{display:none;}
+  .hist-more button{font-size:13.5px;padding:10px 20px;border-radius:10px;}
+  }
   /* ===== holdings matrix ===== */
   #holdTable td{text-align:right;font-size:12.5px;padding:4px 10px;}
   #holdTable td:first-child,#holdTable tfoot td:first-child{
@@ -789,6 +855,7 @@
   <div class="nav">
     <button class="active" data-page="overview"><span class="ic"></span><span class="txt">Tổng quan</span></button>
     <button data-page="performance"><span class="ic"></span><span class="txt">Giao dịch</span></button>
+    <button data-page="history"><span class="ic"></span><span class="txt">Lịch sử GD</span></button>
     <button data-page="insight"><span class="ic"></span><span class="txt">Insight</span></button>
     <button data-page="holdings"><span class="ic"></span><span class="txt">Tồn kho</span></button>
     <button data-page="customer"><span class="ic"></span><span class="txt">Khách hàng</span></button>
@@ -860,6 +927,67 @@
         <tfoot></tfoot>
       </table>
     </div>
+  </div>
+</div>
+
+<div class="page" id="page-history">
+  <div class="hist-bar">
+    <div class="hist-search" id="hSearchBox">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="hSearch" type="search" list="hCustList" placeholder="Tìm tên khách hoặc mã cổ phiếu…" autocomplete="off" spellcheck="false">
+      <button id="hClear" type="button" aria-label="Xoá tìm kiếm">×</button>
+    </div>
+    <div class="hist-seg" id="hStatus">
+      <button type="button" class="on" data-v="closed">Đã chốt</button>
+      <button type="button" data-v="open">Đang mở</button>
+      <button type="button" data-v="all">Tất cả</button>
+    </div>
+    <select id="hRange" aria-label="Khoảng thời gian">
+      <option value="0">Tất cả thời gian</option>
+      <option value="30">30 ngày gần nhất</option>
+      <option value="90">3 tháng gần nhất</option>
+      <option value="180">6 tháng gần nhất</option>
+      <option value="365">12 tháng gần nhất</option>
+      <option value="ytd">Từ đầu năm</option>
+    </select>
+    <select id="hSort" aria-label="Sắp xếp">
+      <option value="new">Mới nhất trước</option>
+      <option value="old">Cũ nhất trước</option>
+      <option value="pnlDesc">Lãi cao nhất</option>
+      <option value="pnlAsc">Lỗ nặng nhất</option>
+      <option value="buy">Giá trị mua lớn nhất</option>
+      <option value="cust">Tên khách A → Z</option>
+    </select>
+  </div>
+  <datalist id="hCustList"></datalist>
+
+  <div class="hist-sum">
+    <div class="hs-main">
+      <span class="l">Tổng lãi/lỗ <b id="hsScope">toàn bộ khách</b></span>
+      <span class="v" id="hsPnl">–</span>
+      <span class="s" id="hsPnlSub">Đang tải dữ liệu…</span>
+    </div>
+    <div class="hs-cols">
+      <div><span class="l">Số deal</span><span class="v" id="hsDeals">–</span></div>
+      <div><span class="l">Tổng tiền mua</span><span class="v" id="hsBuy">–</span></div>
+      <div><span class="l">Lãi vay đem lại</span><span class="v" id="hsInt">–</span></div>
+      <div><span class="l">Tỷ lệ thắng</span><span class="v" id="hsWin">–</span></div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap" id="hWrap">
+    <table id="histTable">
+      <thead><tr>
+        <th>Khách Hàng</th><th>Mã</th><th>Ngày mua</th><th>Ngày bán</th><th>Ngày vay</th>
+        <th>Khối lượng</th><th>Giá mua → bán</th><th>Tổng tiền mua</th><th>Lãi vay</th><th>Lãi/lỗ</th>
+      </tr></thead>
+      <tbody><tr><td colspan="10" class="loading">Đang tải dữ liệu…</td></tr></tbody>
+      <tfoot></tfoot>
+    </table>
+  </div>
+  <div class="hist-more" id="hMore">
+    <button type="button" id="hMoreBtn">Xem thêm 200 dòng</button>
+    <span id="hCount"></span>
   </div>
 </div>
 
@@ -1466,9 +1594,12 @@ function renderInsight(rows){
     if(!ticker||ticker==='-') continue;
     const buyVal=cellNum(r[9]); if(buyVal<=0) continue;
     deals.push({cust,ticker,buyDate,buyVal,qty:cellNum(r[8]),on:cellStr(r[10]).toUpperCase()==='ON',
-      sellDate:cellDate(r[11]),days:cellNum(r[21]),interest:cellNum(r[23]),pnl:cellNum(r[24])});
+      sellDate:cellDate(r[11]),days:cellNum(r[21]),interest:cellNum(r[23]),pnl:cellNum(r[24]),
+      price:cellNum(r[7]), sellPrice:cellNum(r[12]), sellVal:cellNum(r[14]),
+      cur:cellNum(r[28])||cellNum(r[27]), mark:cellStr(r[29])});
   }
   renderHoldings(deals);
+  buildHistory(deals);
   setupCustomerPage(custRows);
   /* KPI deal đang mở */
   const open=deals.filter(d=>d.on);
@@ -1491,6 +1622,150 @@ function renderInsight(rows){
   document.querySelector('#rankTable tfoot').innerHTML=
     `<tr><td>Total</td><td>${T.deals}</td><td>${fmt(T.buy)}</td><td>${fmt(T.int)}</td><td>${deltaHtml(Math.round(T.pnl))}</td><td></td><td></td><td>${T.onCnt} (${fmt(T.onVal)})</td></tr>`;
 }
+
+/* ================= LỊCH SỬ GIAO DỊCH CỦA KHÁCH ================= */
+let __hist=[], __histLimit=200;
+const HIST_PAGE=200;
+function histEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function histNorm(s){
+  return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/đ/g,'d').replace(/Đ/g,'d').toLowerCase();
+}
+function histDate(d){ return d ? d.toLocaleDateString('vi-VN') : '–'; }
+function buildHistory(deals){
+  __hist = deals.slice();
+  const dl=document.getElementById('hCustList');
+  if(dl){
+    const names=[...new Set(__hist.map(d=>d.cust))].sort((a,b)=>a.localeCompare(b,'vi'));
+    dl.innerHTML=names.map(n=>`<option value="${histEsc(n)}"></option>`).join('');
+  }
+  renderHistory();
+}
+function histKey(d){ return d.sellDate || d.buyDate; }
+function histRows(){
+  const q=histNorm((document.getElementById('hSearch')||{}).value||'').trim();
+  const stEl=document.querySelector('#hStatus button.on');
+  const st=stEl?stEl.dataset.v:'closed';
+  const rg=(document.getElementById('hRange')||{}).value||'0';
+  const sort=(document.getElementById('hSort')||{}).value||'new';
+  let rows=__hist;
+  if(st==='closed') rows=rows.filter(d=>!d.on);
+  else if(st==='open') rows=rows.filter(d=>d.on);
+  if(rg!=='0'){
+    let from;
+    if(rg==='ytd'){ const n=new Date(); from=new Date(n.getFullYear(),0,1); }
+    else from=new Date(Date.now()-Number(rg)*86400000);
+    rows=rows.filter(d=>histKey(d)>=from);
+  }
+  if(q){
+    const terms=q.split(/\s+/).filter(Boolean);
+    rows=rows.filter(d=>{
+      const hay=histNorm(d.cust+' '+d.ticker);
+      return terms.every(t=>hay.indexOf(t)>=0);
+    });
+  }
+  const by={
+    new:(a,b)=>histKey(b)-histKey(a),
+    old:(a,b)=>histKey(a)-histKey(b),
+    pnlDesc:(a,b)=>b.pnl-a.pnl,
+    pnlAsc:(a,b)=>a.pnl-b.pnl,
+    buy:(a,b)=>b.buyVal-a.buyVal,
+    cust:(a,b)=>a.cust.localeCompare(b.cust,'vi')||histKey(b)-histKey(a)
+  };
+  return rows.slice().sort(by[sort]||by.new);
+}
+function renderHistory(){
+  const tb=document.querySelector('#histTable tbody');
+  if(!tb) return;
+  const rows=histRows();
+  /* ---- Dòng tổng: luôn tính trên TOÀN BỘ kết quả tìm được, không chỉ phần đang hiện ---- */
+  const T=rows.reduce((a,d)=>({
+    buy:a.buy+d.buyVal, int:a.int+d.interest, pnl:a.pnl+d.pnl, qty:a.qty+d.qty,
+    win:a.win+((!d.on&&d.pnl>0)?1:0), closed:a.closed+(d.on?0:1)
+  }),{buy:0,int:0,pnl:0,qty:0,win:0,closed:0});
+  const pct=T.buy?T.pnl/T.buy*100:0;
+  const set=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
+  const sign=n=>(n>0?'+':'')+fmt(n);
+  const pnlEl=document.getElementById('hsPnl');
+  if(pnlEl){
+    pnlEl.className='v '+(T.pnl<0?'neg':'pos');
+    pnlEl.textContent=sign(T.pnl)+' đ';
+  }
+  const q=(document.getElementById('hSearch')||{}).value||'';
+  const custs=new Set(rows.map(d=>d.cust));
+  set('hsScope', q.trim()
+      ? '· ' + (custs.size===1 ? [...custs][0] : '"'+q.trim()+'" ('+custs.size+' khách)')
+      : 'toàn bộ khách');
+  set('hsPnlSub', rows.length
+      ? (pct>=0?'+':'')+pct.toFixed(2).replace('.',',')+'% trên tiền mua · '
+        + (T.closed?T.closed+' deal đã chốt':'chưa có deal chốt')
+      : 'Không có giao dịch nào khớp');
+  set('hsDeals', fmt(rows.length));
+  set('hsBuy', fmt(T.buy));
+  set('hsInt', fmt(T.int));
+  set('hsWin', T.closed? Math.round(T.win/T.closed*100)+'%' : '–');
+
+  const show=rows.slice(0,__histLimit);
+  const today=new Date();
+  tb.innerHTML = show.length ? show.map(d=>{
+    const p=d.buyVal?d.pnl/d.buyVal*100:0;
+    const days=d.days>0?d.days:(d.on?Math.round((today-d.buyDate)/86400000):0);
+    const outPrice=d.sellPrice||(d.on?d.cur:0);
+    return `<tr>
+      <td class="cn" data-c="${histEsc(d.cust)}">${histEsc(d.cust)}${d.on?'<span class="h-open">ĐANG MỞ</span>':''}</td>
+      <td>${histEsc(d.ticker)}</td>
+      <td>${histDate(d.buyDate)}</td>
+      <td>${histDate(d.sellDate)}</td>
+      <td>${days?fmt(days):'–'}</td>
+      <td>${fmt(d.qty)}</td>
+      <td>${fmt(d.price)}${outPrice?' → '+fmt(outPrice):''}</td>
+      <td>${fmt(d.buyVal)}</td>
+      <td>${fmt(d.interest)}</td>
+      <td class="${d.pnl<0?'neg':'pos'}">${sign(d.pnl)}<span class="h-pct">${(p>=0?'+':'')+p.toFixed(1).replace('.',',')}%</span></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="10" style="text-align:center;color:#999;padding:26px;">Không tìm thấy giao dịch nào</td></tr>`;
+
+  const tf=document.querySelector('#histTable tfoot');
+  if(tf) tf.innerHTML = rows.length
+    ? `<tr><td>TỔNG ${fmt(rows.length)} deal</td><td></td><td></td><td></td><td></td>
+       <td>${fmt(T.qty)}</td><td></td><td>${fmt(T.buy)}</td><td>${fmt(T.int)}</td>
+       <td class="${T.pnl<0?'neg':'pos'}">${sign(T.pnl)}</td></tr>` : '';
+
+  const more=document.getElementById('hMore');
+  const btn=document.getElementById('hMoreBtn');
+  if(more&&btn){
+    const rest=rows.length-show.length;
+    more.style.display = rows.length>HIST_PAGE ? '' : 'none';
+    btn.style.display = rest>0 ? '' : 'none';
+    btn.textContent = 'Xem thêm '+fmt(Math.min(rest,HIST_PAGE))+' dòng';
+    set('hCount', rows.length ? 'Đang hiện '+fmt(show.length)+'/'+fmt(rows.length)+' dòng' : '');
+  }
+}
+(function(){
+  const s=document.getElementById('hSearch');
+  if(!s) return;
+  const box=document.getElementById('hSearchBox');
+  let t;
+  const go=()=>{ __histLimit=HIST_PAGE; renderHistory(); };
+  const sync=()=>box.classList.toggle('has', !!s.value);
+  s.addEventListener('input', ()=>{ sync(); clearTimeout(t); t=setTimeout(go,120); });
+  s.addEventListener('change', ()=>{ sync(); go(); });
+  document.getElementById('hClear').addEventListener('click', ()=>{ s.value=''; sync(); go(); s.focus(); });
+  document.getElementById('hStatus').addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on', x===b));
+    go();
+  });
+  document.getElementById('hRange').addEventListener('change', go);
+  document.getElementById('hSort').addEventListener('change', go);
+  document.getElementById('hMoreBtn').addEventListener('click', ()=>{ __histLimit+=HIST_PAGE; renderHistory(); });
+  document.querySelector('#histTable tbody').addEventListener('click', e=>{
+    const c=e.target.closest('.cn'); if(!c) return;
+    s.value=c.dataset.c; sync(); go();
+    const w=document.getElementById('page-history');
+    if(w) try{ w.scrollTo({top:0,behavior:'smooth'}); }catch(_){ w.scrollTop=0; }
+  });
+})();
 
 /* ================= TỒN KHO: ma trận khách × mã + deal >85 ngày ================= */
 function renderHoldings(deals){
@@ -1911,6 +2186,7 @@ if(authValid()) start();
   <div class="backdrop" data-close="1"></div>
   <div class="panel">
     <div class="grip"></div>
+    <button class="lv-sheet-item" data-page="history"><svg viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.8-6.3"/><path d="M3 4.5V9h4.5"/><path d="M12 7.5V12l3 1.8"/></svg><span>Lịch sử GD</span></button>
     <button class="lv-sheet-item" data-page="insight"><svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.5.4.8 1 .9 1.6h5.2c.1-.6.4-1.2.9-1.6A6 6 0 0 0 12 3Z"/></svg><span>Insight</span></button>
     <button class="lv-sheet-item" data-page="holdings"><svg viewBox="0 0 24 24"><path d="M3 7.5 12 3l9 4.5-9 4.5-9-4.5Z"/><path d="M3 12l9 4.5L21 12"/><path d="M3 16.5 12 21l9-4.5"/></svg><span>Tồn kho</span></button>
     <button class="lv-sheet-item" id="lvSignOut"><svg viewBox="0 0 24 24"><path d="M15 17l5-5-5-5"/><path d="M20 12H9"/><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/></svg><span>Đăng xuất</span></button>
@@ -1920,8 +2196,8 @@ if(authValid()) start();
 <script>
 /* ===== PWA + trải nghiệm app trên mobile ===== */
 (function(){
-  var MORE = ['insight','holdings'];
-  var LABEL = {overview:'Tổng quan', performance:'Giao dịch', insight:'Insight',
+  var MORE = ['history','insight','holdings'];
+  var LABEL = {overview:'Tổng quan', performance:'Giao dịch', history:'Lịch sử GD', insight:'Insight',
                holdings:'Tồn kho', customer:'Khách hàng', custupdate:'KH Update'};
 
   function isMob(){ return window.matchMedia('(max-width:860px)').matches; }
