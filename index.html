@@ -776,8 +776,10 @@
   .hist-sum .hs-cols{display:flex;gap:28px;margin-left:auto;}
   .hist-sum .hs-cols .v{display:block;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;}
   #hWrap{max-height:calc(100vh - 252px);}
+  #histTable thead th{padding:7px 9px;font-size:12px;}
+  #histTable tbody td{padding:5px 9px;font-size:12.5px;font-variant-numeric:tabular-nums;}
+  #histTable tfoot td{padding:7px 9px;font-size:12.5px;}
   #histTable tbody tr:hover{background:#F6FAF7;}
-  #histTable tbody td{font-variant-numeric:tabular-nums;}
   #histTable .cn{cursor:pointer;}
   #histTable .cn:hover{color:var(--green-dark);text-decoration:underline;}
   .h-open{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.02em;color:var(--green-dark);
@@ -979,7 +981,7 @@
     <table id="histTable">
       <thead><tr>
         <th>Khách Hàng</th><th>Mã</th><th>Ngày mua</th><th>Ngày bán</th><th>Ngày vay</th>
-        <th>Khối lượng</th><th>Giá mua → bán</th><th>Tổng tiền mua</th><th>Lãi vay</th><th>Lãi/lỗ</th>
+        <th>KL</th><th>Giá mua → bán</th><th>Tiền mua</th><th>Lãi vay</th><th>Lãi/lỗ</th>
       </tr></thead>
       <tbody><tr><td colspan="10" class="loading">Đang tải dữ liệu…</td></tr></tbody>
       <tfoot></tfoot>
