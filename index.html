@@ -758,6 +758,11 @@
   .hist-search button{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:none;
     border:none;background:none;font:inherit;font-size:17px;line-height:1;color:#9AA3A0;cursor:pointer;padding:3px 6px;}
   .hist-search.has button{display:block;}
+  .hist-tick{flex:0 0 138px;min-width:0;max-width:138px;}
+  .hist-tick input{text-transform:uppercase;font-weight:700;letter-spacing:.02em;}
+  .hist-tick input::placeholder{text-transform:none;font-weight:400;letter-spacing:0;}
+  .h-now{display:inline-block;font-size:9px;font-weight:700;color:#8b9490;background:#F0F2F1;
+    border-radius:3px;padding:0 4px;margin-left:5px;vertical-align:1px;}
   .hist-seg{display:flex;background:#EFF2F0;border-radius:8px;padding:3px;gap:2px;}
   .hist-seg button{border:none;background:none;font:inherit;font-size:12.5px;font-weight:600;
     color:#65726C;padding:6px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;}
@@ -808,8 +813,9 @@
   .hist-sum .hs-cols .l{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .hist-sum .hs-cols .v{font-size:14px;overflow:hidden;text-overflow:ellipsis;}
   #hWrap{max-height:none;}
-  /* thẻ gọn: bỏ 2 cột ít dùng, dòng tổng đã nằm ở thanh trên */
-  #histTable tbody td:nth-child(5),#histTable tbody td:nth-child(7){display:none;}
+  .hist-tick{flex:1 0 100%;max-width:none;}
+  /* thẻ gọn: bỏ cột ít dùng, dòng tổng đã nằm ở thanh trên */
+  #histTable tbody td:nth-child(5){display:none;}
   #histTable tfoot{display:none;}
   .hist-more button{font-size:13.5px;padding:10px 20px;border-radius:10px;}
   }
@@ -936,8 +942,13 @@
   <div class="hist-bar">
     <div class="hist-search" id="hSearchBox">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="hSearch" type="search" list="hCustList" placeholder="Tìm tên khách hoặc mã cổ phiếu…" autocomplete="off" spellcheck="false">
+      <input id="hSearch" type="search" list="hCustList" placeholder="Tìm tên khách hàng…" autocomplete="off" spellcheck="false">
       <button id="hClear" type="button" aria-label="Xoá tìm kiếm">×</button>
+    </div>
+    <div class="hist-search hist-tick" id="hTickBox">
+      <svg viewBox="0 0 24 24"><path d="M4 18l5-6 4 4 7-8"/><path d="M20 8h-4"/><path d="M20 8v4"/></svg>
+      <input id="hTicker" type="search" list="hTickList" placeholder="Mã CP…" autocomplete="off" spellcheck="false">
+      <button id="hTickClear" type="button" aria-label="Xoá mã">×</button>
     </div>
     <div class="hist-seg" id="hStatus">
       <button type="button" class="on" data-v="closed">Đã chốt</button>
@@ -962,6 +973,7 @@
     </select>
   </div>
   <datalist id="hCustList"></datalist>
+  <datalist id="hTickList"></datalist>
 
   <div class="hist-sum">
     <div class="hs-main">
@@ -981,9 +993,9 @@
     <table id="histTable">
       <thead><tr>
         <th>Khách Hàng</th><th>Mã</th><th>Ngày mua</th><th>Ngày bán</th><th>Ngày vay</th>
-        <th>KL</th><th>Giá mua → bán</th><th>Tiền mua</th><th>Lãi vay</th><th>Lãi/lỗ</th>
+        <th>KL</th><th>Giá mua</th><th>Giá bán</th><th>+/- giá</th><th>Tiền mua</th><th>Lãi vay</th><th>Lãi/lỗ</th>
       </tr></thead>
-      <tbody><tr><td colspan="10" class="loading">Đang tải dữ liệu…</td></tr></tbody>
+      <tbody><tr><td colspan="12" class="loading">Đang tải dữ liệu…</td></tr></tbody>
       <tfoot></tfoot>
     </table>
   </div>
@@ -1641,11 +1653,17 @@ function buildHistory(deals){
     const names=[...new Set(__hist.map(d=>d.cust))].sort((a,b)=>a.localeCompare(b,'vi'));
     dl.innerHTML=names.map(n=>`<option value="${histEsc(n)}"></option>`).join('');
   }
+  const dt=document.getElementById('hTickList');
+  if(dt){
+    const ticks=[...new Set(__hist.map(d=>d.ticker))].sort();
+    dt.innerHTML=ticks.map(n=>`<option value="${histEsc(n)}"></option>`).join('');
+  }
   renderHistory();
 }
 function histKey(d){ return d.sellDate || d.buyDate; }
 function histRows(){
   const q=histNorm((document.getElementById('hSearch')||{}).value||'').trim();
+  const tk=histNorm((document.getElementById('hTicker')||{}).value||'').trim();
   const stEl=document.querySelector('#hStatus button.on');
   const st=stEl?stEl.dataset.v:'closed';
   const rg=(document.getElementById('hRange')||{}).value||'0';
@@ -1658,6 +1676,10 @@ function histRows(){
     if(rg==='ytd'){ const n=new Date(); from=new Date(n.getFullYear(),0,1); }
     else from=new Date(Date.now()-Number(rg)*86400000);
     rows=rows.filter(d=>histKey(d)>=from);
+  }
+  if(tk){
+    const tks=tk.split(/[\s,]+/).filter(Boolean);
+    rows=rows.filter(d=>{ const h=histNorm(d.ticker); return tks.some(x=>h.indexOf(x)>=0); });
   }
   if(q){
     const terms=q.split(/\s+/).filter(Boolean);
@@ -1693,10 +1715,12 @@ function renderHistory(){
     pnlEl.className='v '+(T.pnl<0?'neg':'pos');
     pnlEl.textContent=sign(T.pnl)+' đ';
   }
-  const q=(document.getElementById('hSearch')||{}).value||'';
+  const q=((document.getElementById('hSearch')||{}).value||'').trim();
+  const qt=((document.getElementById('hTicker')||{}).value||'').trim().toUpperCase();
   const custs=new Set(rows.map(d=>d.cust));
-  set('hsScope', q.trim()
-      ? '· ' + (custs.size===1 ? [...custs][0] : '"'+q.trim()+'" ('+custs.size+' khách)')
+  const who=q ? (custs.size===1 ? [...custs][0] : '"'+q+'" ('+custs.size+' khách)') : '';
+  set('hsScope', (q||qt)
+      ? '· ' + [who, qt].filter(Boolean).join(' · ')
       : 'toàn bộ khách');
   set('hsPnlSub', rows.length
       ? (pct>=0?'+':'')+pct.toFixed(2).replace('.',',')+'% trên tiền mua · '
@@ -1713,6 +1737,7 @@ function renderHistory(){
     const p=d.buyVal?d.pnl/d.buyVal*100:0;
     const days=d.days>0?d.days:(d.on?Math.round((today-d.buyDate)/86400000):0);
     const outPrice=d.sellPrice||(d.on?d.cur:0);
+    const gap=(outPrice&&d.price)?(outPrice-d.price)/d.price*100:null;
     return `<tr>
       <td class="cn" data-c="${histEsc(d.cust)}">${histEsc(d.cust)}${d.on?'<span class="h-open">ĐANG MỞ</span>':''}</td>
       <td>${histEsc(d.ticker)}</td>
@@ -1720,17 +1745,19 @@ function renderHistory(){
       <td>${histDate(d.sellDate)}</td>
       <td>${days?fmt(days):'–'}</td>
       <td>${fmt(d.qty)}</td>
-      <td>${fmt(d.price)}${outPrice?' → '+fmt(outPrice):''}</td>
+      <td>${fmt(d.price)}</td>
+      <td>${outPrice?fmt(outPrice):'–'}${d.on&&outPrice?'<span class="h-now">TT</span>':''}</td>
+      <td class="${gap===null?'':(gap<0?'neg':'pos')}">${gap===null?'–':(gap>=0?'+':'')+gap.toFixed(1).replace('.',',')+'%'}</td>
       <td>${fmt(d.buyVal)}</td>
       <td>${fmt(d.interest)}</td>
       <td class="${d.pnl<0?'neg':'pos'}">${sign(d.pnl)}<span class="h-pct">${(p>=0?'+':'')+p.toFixed(1).replace('.',',')}%</span></td>
     </tr>`;
-  }).join('') : `<tr><td colspan="10" style="text-align:center;color:#999;padding:26px;">Không tìm thấy giao dịch nào</td></tr>`;
+  }).join('') : `<tr><td colspan="12" style="text-align:center;color:#999;padding:26px;">Không tìm thấy giao dịch nào</td></tr>`;
 
   const tf=document.querySelector('#histTable tfoot');
   if(tf) tf.innerHTML = rows.length
     ? `<tr><td>TỔNG ${fmt(rows.length)} deal</td><td></td><td></td><td></td><td></td>
-       <td>${fmt(T.qty)}</td><td></td><td>${fmt(T.buy)}</td><td>${fmt(T.int)}</td>
+       <td>${fmt(T.qty)}</td><td></td><td></td><td></td><td>${fmt(T.buy)}</td><td>${fmt(T.int)}</td>
        <td class="${T.pnl<0?'neg':'pos'}">${sign(T.pnl)}</td></tr>` : '';
 
   const more=document.getElementById('hMore');
@@ -1747,11 +1774,16 @@ function renderHistory(){
   const s=document.getElementById('hSearch');
   if(!s) return;
   const box=document.getElementById('hSearchBox');
+  const tk=document.getElementById('hTicker');
+  const tkBox=document.getElementById('hTickBox');
   let t;
   const go=()=>{ __histLimit=HIST_PAGE; renderHistory(); };
-  const sync=()=>box.classList.toggle('has', !!s.value);
+  const sync=()=>{ box.classList.toggle('has', !!s.value); tkBox.classList.toggle('has', !!tk.value); };
   s.addEventListener('input', ()=>{ sync(); clearTimeout(t); t=setTimeout(go,120); });
   s.addEventListener('change', ()=>{ sync(); go(); });
+  tk.addEventListener('input', ()=>{ sync(); clearTimeout(t); t=setTimeout(go,120); });
+  tk.addEventListener('change', ()=>{ sync(); go(); });
+  document.getElementById('hTickClear').addEventListener('click', ()=>{ tk.value=''; sync(); go(); tk.focus(); });
   document.getElementById('hClear').addEventListener('click', ()=>{ s.value=''; sync(); go(); s.focus(); });
   document.getElementById('hStatus').addEventListener('click', e=>{
     const b=e.target.closest('button'); if(!b) return;
