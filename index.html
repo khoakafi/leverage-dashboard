@@ -750,14 +750,29 @@
   .u-td-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:9px;}
   .u-td-sum{font-size:12.5px;color:#6b7671;font-weight:600;font-variant-numeric:tabular-nums;}
   .u-td-sum .b{color:var(--green-dark);} .u-td-sum .s{color:var(--red);}
-  .u-tick{flex:none;width:30px;height:30px;padding:0;border-radius:50%;cursor:pointer;
-    border:1.5px solid #D5DBD7;background:#fff;display:inline-flex;align-items:center;justify-content:center;
-    transition:background .12s,border-color .12s;}
-  .u-tick svg{width:15px;height:15px;fill:none;stroke:#C2CAC6;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;}
-  .u-tick.on{background:var(--green);border-color:var(--green);}
-  .u-tick.on svg{stroke:#fff;}
-  .u-tick:hover{border-color:var(--green);}
-  #uTdBox.an{display:none;}
+  .u-pill{display:inline-flex;align-items:center;gap:7px;font:inherit;font-size:12.5px;font-weight:700;
+    color:#6b7671;background:#fff;border:1px solid #E2E7E4;border-radius:20px;
+    padding:5px 14px 5px 6px;cursor:pointer;box-shadow:var(--card-shadow);white-space:nowrap;}
+  .u-pill .u-tick{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid #D5DBD7;background:#fff;
+    display:inline-flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s;}
+  .u-pill .u-tick svg{width:12px;height:12px;fill:none;stroke:#C2CAC6;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;}
+  .u-pill.on{color:var(--green-dark);border-color:#CBE8D6;}
+  .u-pill.on .u-tick{background:var(--green);border-color:var(--green);}
+  .u-pill.on .u-tick svg{stroke:#fff;}
+  .u-pill:hover{border-color:var(--green);}
+  #uTdBox.an,#uHsBox.an{display:none;}
+  /* lọc của khối lịch sử trong tab khách */
+  .u-hs-bar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:10px;}
+  .u-hs-bar .hist-search{min-width:170px;max-width:230px;}
+  .u-hs-bar select{font:inherit;font-size:12.5px;padding:7px 9px;border:1px solid #D8DEDA;
+    border-radius:8px;background:#fff;color:#444;cursor:pointer;}
+  #uHsTable thead th{background:#EFF6F1;color:#4a544f;}
+  #uHsTable thead th.sth:hover{background:#E1F0E7;color:var(--green-dark);}
+  #uHsTable thead th.sth.on{color:var(--green-dark);}
+  #uHsTable tbody td{font-variant-numeric:tabular-nums;}
+  #uHsTable tbody tr:hover{background:#F6FAF7;}
+  #uHsTable tfoot td{border-top:2px solid #CFE0D6;}
+  .u-hs-sortm{display:none;}   /* web sắp xếp bằng cách bấm tiêu đề cột */
   .u-side{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.02em;
     padding:2px 7px;border-radius:6px;margin-right:8px;vertical-align:1px;}
   .u-side.b{background:#E9F6EE;color:var(--green-dark);}
@@ -835,6 +850,14 @@
   #histTable tbody td:nth-child(5){display:none;}
   #histTable tfoot{display:none;}
   .hist-more button{font-size:13.5px;padding:10px 20px;border-radius:10px;}
+  /* KH Update: trên điện thoại tiêu đề cột bị ẩn -> cho ô sắp xếp thay thế */
+  .u-hs-sortm{display:inline-block;}
+  .u-hs-bar{gap:8px;}
+  .u-hs-bar .hist-search{flex:1 0 100%;max-width:none;}
+  .u-hs-bar select{flex:1;min-width:0;padding:9px 8px;border-radius:10px;}
+  #uHsTable tbody td:nth-child(4),#uHsTable tbody td:nth-child(10){display:none;}
+  #uHsTable tfoot{display:none;}
+  .u-pill{font-size:12px;padding:4px 11px 4px 5px;}
   }
   /* ===== holdings matrix ===== */
   #holdTable td{text-align:right;font-size:12.5px;padding:4px 10px;}
@@ -1129,11 +1152,10 @@
       <div class="cu-sub">Tổng quan tài khoản của bạn</div>
     </div>
     <div style="display:flex;gap:12px;align-items:center;">
-      <button type="button" class="u-tick on" id="uTdTick" aria-pressed="true"
-        title="Bật/tắt khối Giao dịch hôm nay" aria-label="Bật/tắt khối Giao dịch hôm nay">
-        <svg viewBox="0 0 24 24"><path d="M5 12.6l4.6 4.6L19 7.4"/></svg>
-      </button>
-      <span class="cu-badge">Dữ liệu Real Time</span>
+      <button type="button" class="u-pill on" id="uTdTick" aria-pressed="true" title="Bật/tắt khối Giao dịch hôm nay">
+        <span class="u-tick"><svg viewBox="0 0 24 24"><path d="M5 12.6l4.6 4.6L19 7.4"/></svg></span>Hôm nay</button>
+      <button type="button" class="u-pill on" id="uHsTick" aria-pressed="true" title="Bật/tắt khối Lịch sử giao dịch">
+        <span class="u-tick"><svg viewBox="0 0 24 24"><path d="M5 12.6l4.6 4.6L19 7.4"/></svg></span>Lịch sử</button>
       <select id="uSel" style="max-width:220px;font:inherit;padding:8px 12px;border-radius:8px;border:none;background:var(--green);color:#fff;font-weight:700;"></select>
     </div>
   </div>
@@ -1183,6 +1205,62 @@
         <tfoot></tfoot>
       </table>
     </div>
+  </div>
+
+  <div class="cu-box" style="margin-top:14px;" id="uHsBox">
+    <div class="u-td-head">
+      <div class="cu-title" style="margin-bottom:0;">Lịch sử giao dịch</div>
+      <div class="u-td-sum" id="uHsSum"></div>
+    </div>
+    <div class="u-hs-bar">
+      <div class="hist-search" id="uHsBoxQ">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="uHsQ" type="search" list="uHsList" placeholder="Lọc theo mã…" autocomplete="off" spellcheck="false">
+        <button id="uHsX" type="button" aria-label="Xoá mã">×</button>
+      </div>
+      <datalist id="uHsList"></datalist>
+      <select id="uHsRange" aria-label="Khoảng thời gian">
+        <option value="0">Tất cả thời gian</option>
+        <option value="30">30 ngày gần nhất</option>
+        <option value="90">3 tháng gần nhất</option>
+        <option value="180">6 tháng gần nhất</option>
+        <option value="365">12 tháng gần nhất</option>
+        <option value="ytd">Từ đầu năm</option>
+      </select>
+      <select id="uHsSortM" class="u-hs-sortm" aria-label="Sắp xếp">
+        <option value="ngay|-1">Mới nhất</option>
+        <option value="pnl|-1">Lãi cao nhất</option>
+        <option value="pnl|1">Lỗ nặng nhất</option>
+        <option value="gap|-1">+/- giá cao nhất</option>
+        <option value="buyVal|-1">Tiền mua lớn nhất</option>
+        <option value="t|1">Mã A → Z</option>
+      </select>
+      <select id="uHsStatus" aria-label="Trạng thái deal">
+        <option value="closed">Đã chốt</option>
+        <option value="open">Đang mở</option>
+        <option value="all">Tất cả</option>
+      </select>
+    </div>
+    <div style="overflow:auto;">
+      <table id="uHsTable">
+        <thead><tr>
+          <th class="sth" data-k="t">Mã<span class="arr"></span></th>
+          <th class="sth" data-k="buyDate">Ngày mua<span class="arr"></span></th>
+          <th class="sth" data-k="sellDate">Ngày bán<span class="arr"></span></th>
+          <th class="sth" data-k="days">Ngày vay<span class="arr"></span></th>
+          <th class="sth" data-k="qty">KL<span class="arr"></span></th>
+          <th class="sth" data-k="price">Giá mua<span class="arr"></span></th>
+          <th class="sth" data-k="sellPrice">Giá bán<span class="arr"></span></th>
+          <th class="sth" data-k="gap">+/- giá<span class="arr"></span></th>
+          <th class="sth" data-k="buyVal">Tiền mua<span class="arr"></span></th>
+          <th class="sth" data-k="interest">Lãi vay<span class="arr"></span></th>
+          <th class="sth" data-k="pnl">Lãi/lỗ<span class="arr"></span></th>
+        </tr></thead>
+        <tbody><tr><td colspan="11" class="loading">Đang tải…</td></tr></tbody>
+        <tfoot></tfoot>
+      </table>
+    </div>
+    <div class="hist-more" id="uHsMore"><button type="button" id="uHsMoreBtn">Xem thêm</button><span id="uHsCount"></span></div>
   </div>
 
   <div class="cu-box" style="margin-top:14px;">
@@ -1718,6 +1796,8 @@ function buildHistory(deals){
     dt.innerHTML=ticks.map(n=>`<option value="${histEsc(n)}"></option>`).join('');
   }
   renderHistory();
+  /* Key in về sau khi trang KH Update đã vẽ -> vẽ lại lịch sử của khách đang chọn */
+  try { const u=document.getElementById('uSel'); if(u&&u.value) renderUserHist(u.value); } catch(e){}
 }
 function histKey(d){ return d.sellDate || d.buyDate; }
 function histRows(){
@@ -2118,6 +2198,7 @@ function renderUpdatePage(){
         datalabels:{display:false}}}};
   if(uPie){uPie.data=cfg.data;uPie.update();}else uPie=new Chart(ctx,cfg);
   renderUpdateTrades(name);
+  renderUserHist(name);
   renderNavChart(hist);
 }
 function renderNavChart(hist){
@@ -2182,20 +2263,138 @@ function renderUpdateTrades(name){
     ? `Mua <b class="b">${fmt(mua)} đ</b> · Bán <b class="s">${fmt(ban)} đ</b>`
     : '<span style="color:#9aa3a0;">Không có lệnh</span>';
 }
-/* Tick tròn ở đầu tab: tắt là giấu NGUYÊN khối Giao dịch hôm nay (cả tiêu đề),
-   bật lại là hiện. Nhớ lựa chọn trong máy. */
+/* ===== KH Update: lịch sử giao dịch của riêng khách đang xem =====
+   Lấy đúng nguồn với tab Lịch sử GD (sheet Key in), lọc theo tên khách.
+   Có ô tìm mã, lọc thời gian, lọc trạng thái, và bấm tiêu đề cột để sắp xếp. */
+let __uHsSort={k:'ngay', d:-1}, __uHsLimit=50;
+const UHS_TRANG=50;
+function uHsKhach(){ const e=document.getElementById('uSel'); return e?e.value:''; }
+function uHsLoc(name){
+  let rows=(typeof __hist==='undefined'?[]:__hist).filter(d=>d.cust===name);
+  const st=(document.getElementById('uHsStatus')||{}).value||'closed';
+  if(st==='closed') rows=rows.filter(d=>!d.on);
+  else if(st==='open') rows=rows.filter(d=>d.on);
+  const rg=(document.getElementById('uHsRange')||{}).value||'0';
+  if(rg!=='0'){
+    let from;
+    if(rg==='ytd'){ const n=new Date(); from=new Date(n.getFullYear(),0,1); }
+    else from=new Date(Date.now()-Number(rg)*86400000);
+    rows=rows.filter(d=>histKey(d)>=from);
+  }
+  const q=histNorm((document.getElementById('uHsQ')||{}).value||'').trim();
+  if(q){ const ts=q.split(/[\s,]+/).filter(Boolean);
+    rows=rows.filter(d=>{ const h=histNorm(d.ticker); return ts.some(x=>h.indexOf(x)>=0); }); }
+  const gap=d=>{ const out=d.sellPrice||(d.on?d.cur:0); return (out&&d.price)?(out-d.price)/d.price*100:-1e9; };
+  const K={ t:d=>d.ticker, ngay:d=>histKey(d).getTime(), buyDate:d=>d.buyDate.getTime(),
+    sellDate:d=>d.sellDate?d.sellDate.getTime():0, days:d=>d.days||0, qty:d=>d.qty,
+    price:d=>d.price, sellPrice:d=>d.sellPrice||d.cur||0, gap, buyVal:d=>d.buyVal,
+    interest:d=>d.interest, pnl:d=>d.pnl };
+  const f=K[__uHsSort.k]||K.ngay, dir=__uHsSort.d;
+  return rows.slice().sort((a,b)=>{
+    const x=f(a), y=f(b);
+    if(typeof x==='string') return dir*x.localeCompare(y,'vi');
+    return dir*(x-y);
+  });
+}
+function renderUserHist(name){
+  const tb=document.querySelector('#uHsTable tbody'); if(!tb) return;
+  const tf=document.querySelector('#uHsTable tfoot'), sm=document.getElementById('uHsSum');
+  if(typeof __hist==='undefined' || !__hist.length){
+    tb.innerHTML='<tr><td colspan="11" style="text-align:center;color:#999;">Đang tải…</td></tr>';
+    tf.innerHTML=''; if(sm) sm.textContent=''; return;
+  }
+  /* gợi ý mã của đúng khách này */
+  const dl=document.getElementById('uHsList');
+  if(dl){ const ma=[...new Set(__hist.filter(d=>d.cust===name).map(d=>d.ticker))].sort();
+    const khoa=name+'|'+ma.length;
+    if(dl.dataset.k!==khoa){ dl.dataset.k=khoa; dl.innerHTML=ma.map(x=>`<option value="${histEsc(x)}"></option>`).join(''); } }
+
+  const rows=uHsLoc(name);
+  const T=rows.reduce((a,d)=>({buy:a.buy+d.buyVal,int:a.int+d.interest,pnl:a.pnl+d.pnl,qty:a.qty+d.qty,
+    win:a.win+((!d.on&&d.pnl>0)?1:0), closed:a.closed+(d.on?0:1)}),{buy:0,int:0,pnl:0,qty:0,win:0,closed:0});
+  const sign=n=>(n>0?'+':'')+fmt(n);
+  if(sm) sm.innerHTML=rows.length
+    ? `${fmt(rows.length)} deal · Lãi/lỗ <b class="${T.pnl<0?'s':'b'}">${sign(T.pnl)} đ</b>`
+      + (T.closed?` · Thắng ${Math.round(T.win/T.closed*100)}%`:'')
+    : '<span style="color:#9aa3a0;">Không có giao dịch nào khớp</span>';
+
+  const show=rows.slice(0,__uHsLimit), today=new Date();
+  tb.innerHTML=show.length?show.map(d=>{
+    const out=d.sellPrice||(d.on?d.cur:0);
+    const g=(out&&d.price)?(out-d.price)/d.price*100:null;
+    const ngay=d.days>0?d.days:(d.on?Math.round((today-d.buyDate)/86400000):0);
+    const p=d.buyVal?d.pnl/d.buyVal*100:0;
+    return `<tr>
+      <td><b>${histEsc(d.ticker)}</b>${d.on?'<span class="h-open">ĐANG MỞ</span>':''}</td>
+      <td>${histDate(d.buyDate)}</td><td>${histDate(d.sellDate)}</td>
+      <td>${ngay?fmt(ngay):'–'}</td><td>${fmt(d.qty)}</td>
+      <td>${fmt(d.price)}</td><td>${out?fmt(out):'–'}${d.on&&out?'<span class="h-now">TT</span>':''}</td>
+      <td class="${g===null?'':(g<0?'neg':'pos')}">${g===null?'–':(g>=0?'+':'')+g.toFixed(1).replace('.',',')+'%'}</td>
+      <td>${fmt(d.buyVal)}</td><td>${fmt(d.interest)}</td>
+      <td class="${d.pnl<0?'neg':'pos'}">${sign(d.pnl)}<span class="h-pct">${(p>=0?'+':'')+p.toFixed(1).replace('.',',')}%</span></td>
+    </tr>`;}).join('') : '<tr><td colspan="11" style="text-align:center;color:#999;padding:22px;">Không có giao dịch nào khớp</td></tr>';
+  tf.innerHTML=rows.length?
+    `<tr><td>TỔNG ${fmt(rows.length)} deal</td><td></td><td></td><td></td><td>${fmt(T.qty)}</td>
+     <td></td><td></td><td></td><td>${fmt(T.buy)}</td><td>${fmt(T.int)}</td>
+     <td class="${T.pnl<0?'neg':'pos'}">${sign(T.pnl)}</td></tr>`:'';
+  const more=document.getElementById('uHsMore'), btn=document.getElementById('uHsMoreBtn');
+  if(more&&btn){
+    const con=rows.length-show.length;
+    more.style.display=rows.length>UHS_TRANG?'':'none';
+    btn.style.display=con>0?'':'none';
+    btn.textContent='Xem thêm '+fmt(Math.min(con,UHS_TRANG))+' dòng';
+    const c=document.getElementById('uHsCount');
+    if(c) c.textContent=rows.length?'Đang hiện '+fmt(show.length)+'/'+fmt(rows.length)+' dòng':'';
+  }
+  /* ô sắp xếp (điện thoại) bám theo cột đang sắp */
+  const sortSel=document.getElementById('uHsSortM');
+  if(sortSel){ const v=__uHsSort.k+'|'+__uHsSort.d;
+    if([...sortSel.options].some(o=>o.value===v)) sortSel.value=v; }
+  /* mũi tên trên tiêu đề cột */
+  document.querySelectorAll('#uHsTable thead th.sth').forEach(th=>{
+    const on=th.dataset.k===__uHsSort.k;
+    th.classList.toggle('on', on);
+    th.querySelector('.arr').textContent = on ? (__uHsSort.d<0?'▼':'▲') : '';
+  });
+}
 (function(){
-  const box=document.getElementById('uTdBox'), tick=document.getElementById('uTdTick');
-  if(!box||!tick) return;
-  const KHOA='lv_utd_an';
-  const ve=()=>{ const an=box.classList.contains('an');
-    tick.classList.toggle('on', !an); tick.setAttribute('aria-pressed', an?'false':'true'); };
-  try{ if(localStorage.getItem(KHOA)==='1') box.classList.add('an'); }catch(e){}
-  ve();
-  tick.addEventListener('click',()=>{
-    box.classList.toggle('an');
-    try{ localStorage.setItem(KHOA, box.classList.contains('an')?'1':'0'); }catch(e){}
+  const q=document.getElementById('uHsQ'); if(!q) return;
+  const box=document.getElementById('uHsBoxQ');
+  let t;
+  const go=()=>{ __uHsLimit=UHS_TRANG; renderUserHist(uHsKhach()); };
+  const sync=()=>box.classList.toggle('has', !!q.value);
+  q.addEventListener('input',()=>{ sync(); clearTimeout(t); t=setTimeout(go,120); });
+  q.addEventListener('change',()=>{ sync(); go(); });
+  document.getElementById('uHsX').addEventListener('click',()=>{ q.value=''; sync(); go(); q.focus(); });
+  const smSel=document.getElementById('uHsSortM');
+  if(smSel) smSel.addEventListener('change',()=>{ const [k,d]=smSel.value.split('|'); __uHsSort={k, d:Number(d)}; go(); });
+  document.getElementById('uHsRange').addEventListener('change',go);
+  document.getElementById('uHsStatus').addEventListener('change',go);
+  document.getElementById('uHsMoreBtn').addEventListener('click',()=>{ __uHsLimit+=UHS_TRANG; renderUserHist(uHsKhach()); });
+  document.querySelectorAll('#uHsTable thead th.sth').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const k=th.dataset.k;
+      if(__uHsSort.k===k) __uHsSort.d=-__uHsSort.d;
+      else __uHsSort={k, d: k==='t' ? 1 : -1};
+      go();
+    });
+  });
+})();
+/* Hai nút tick tròn ở đầu tab: tắt là giấu NGUYÊN khối (cả tiêu đề). Nhớ trong máy. */
+(function(){
+  const cap=[['uTdBox','uTdTick','lv_utd_an'], ['uHsBox','uHsTick','lv_uhs_an']];
+  cap.forEach(([bid,tid,khoa])=>{
+    const box=document.getElementById(bid), tick=document.getElementById(tid);
+    if(!box||!tick) return;
+    const ve=()=>{ const an=box.classList.contains('an');
+      tick.classList.toggle('on', !an); tick.setAttribute('aria-pressed', an?'false':'true'); };
+    try{ if(localStorage.getItem(khoa)==='1') box.classList.add('an'); }catch(e){}
     ve();
+    tick.addEventListener('click',()=>{
+      box.classList.toggle('an');
+      try{ localStorage.setItem(khoa, box.classList.contains('an')?'1':'0'); }catch(e){}
+      ve();
+    });
   });
 })();
 function renderCustTrades(name){
