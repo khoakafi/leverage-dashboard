@@ -2008,6 +2008,12 @@ function load5bil(rows){ // danh sách khách chuẩn: sheet "5 bil" cột B, t�
    Khách NAV = 0, nợ = 0, không cầm mã (đã tất toán) -> ẩn.
    Chỉ lọc khi đã tải xong CẢ Key in và NAV - Real Time; chưa đủ dữ liệu thì hiện đủ danh sách cũ (không ẩn nhầm ai). */
 let __keyinXong=false;
+/* Ẩn tay (anh Khoa chọn 23/09/2026): tài khoản cũ / tài khoản phụ còn số lẻ trong sheet nhưng không cần theo dõi.
+   Thêm/bớt tên ở đây. So khớp bỏ dấu cách, gạch nối, hoa thường (khớp "02 - Anh Thọ" với "02-anh thọ"). */
+const KN_AN_KHACH = ['Huy 02', '02 - Anh Thọ', 'Sếp Phát - 01', 'Anh Thịnh', 'Bạn Khôi - Linh'];
+const knChuanTen = n => String(n||'').normalize('NFC').toLowerCase().replace(/[\s\-–—_.]+/g,'');
+const __knAnSet = new Set(KN_AN_KHACH.map(knChuanTen));
+const knAnTay = n => __knAnSet.has(knChuanTen(n));
 const KN_NAV_BO_QUA = 10000;   // |NAV|, |nợ| dưới 10.000đ coi như 0 (số lẻ làm tròn)
 function knDsKhach(){
   const vi=(a,b)=>a.localeCompare(b,'vi');
@@ -2028,9 +2034,11 @@ function knDsKhach(){
   const nhomCam=tatCa.filter(n=>camMa.has(n));
   const nhomTien=tatCa.filter(n=>!camMa.has(n)&&(conTien(n)||coMoi.has(n)));
   const an=tatCa.filter(n=>!camMa.has(n)&&!conTien(n)&&!coMoi.has(n));
-  return {loc:true, an, moi, nhom:[
-    {ten:'Đang cầm mã ('+nhomCam.length+')', ds:nhomCam},
-    {ten:'Chỉ còn tiền — không cầm mã ('+nhomTien.length+')', ds:nhomTien}
+  const anTay=tatCa.filter(knAnTay);
+  const bo=a=>a.filter(n=>!knAnTay(n));
+  return {loc:true, an:[...an.filter(n=>!knAnTay(n)), ...anTay], moi, nhom:[
+    {ten:'Đang cầm mã ('+bo(nhomCam).length+')', ds:bo(nhomCam)},
+    {ten:'Chỉ còn tiền — không cầm mã ('+bo(nhomTien).length+')', ds:bo(nhomTien)}
   ].filter(g=>g.ds.length)};
 }
 function fillCustSelects(){
