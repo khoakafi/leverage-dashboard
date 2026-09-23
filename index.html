@@ -2001,21 +2001,55 @@ function load5bil(rows){ // danh sách khách chuẩn: sheet "5 bil" cột B, t�
   renderCustomerPage();
   renderUpdatePage();
 }
+/* Danh sách khách TỰ ĐỘNG (23/09/2026, anh Khoa yêu cầu) — chỉ ĐỌC sheet, không ghi gì vào sheet:
+   1) Đang cầm mã      : có dòng ON trong Key in, có mã, KL > 0
+   2) Chỉ còn tiền     : không cầm mã nhưng NAV (NAV - Real Time cột B) hoặc dư nợ khác 0 -> vẫn phải hiện
+   3) Khách mới Key in : có dòng ON trong Key in nhưng chưa có trong danh sách sheet "5 bil"
+   Khách NAV = 0, nợ = 0, không cầm mã (đã tất toán) -> ẩn.
+   Chỉ lọc khi đã tải xong CẢ Key in và NAV - Real Time; chưa đủ dữ liệu thì hiện đủ danh sách cũ (không ẩn nhầm ai). */
+let __keyinXong=false;
+const KN_NAV_BO_QUA = 10000;   // |NAV|, |nợ| dưới 10.000đ coi như 0 (số lẻ làm tròn)
+function knDsKhach(){
+  const vi=(a,b)=>a.localeCompare(b,'vi');
+  let goc;
+  if(__listNames.length) goc=__listNames;                                   // giữ thứ tự trong sheet 5 bil
+  else if(__nrtNames.length) goc=[...__nrtNames].sort(vi);
+  else goc=[...new Set(__custRows.map(r=>r.cust))].sort(vi);
+  if(!(__keyinXong && __nrt)) return {loc:false, nhom:[{ten:'', ds:goc}]};
+  const coGoc=new Set(goc);
+  const keyin=[...new Set(__custRows.map(r=>r.cust).filter(Boolean))];
+  const moi=keyin.filter(n=>!coGoc.has(n)).sort(vi);
+  const camMa=new Set(__custRows.filter(r=>r.ticker&&r.qty>0).map(r=>r.cust));
+  const conTien=n=>{ const x=__nrt[n]; return !!x && (Math.abs(x.nav||0)>=KN_NAV_BO_QUA || Math.abs(x.debt||0)>=KN_NAV_BO_QUA); };
+  const tatCa=[...goc, ...__nrtNames.filter(n=>!coGoc.has(n)&&!moi.includes(n))];
+  const nhomCam=tatCa.filter(n=>camMa.has(n));
+  const nhomTien=tatCa.filter(n=>!camMa.has(n)&&conTien(n));
+  const an=tatCa.filter(n=>!camMa.has(n)&&!conTien(n));
+  return {loc:true, an, nhom:[
+    {ten:'Đang cầm mã ('+nhomCam.length+')', ds:nhomCam},
+    {ten:'Chỉ còn tiền — không cầm mã ('+nhomTien.length+')', ds:nhomTien},
+    {ten:'Khách mới từ Key in ('+moi.length+')', ds:moi, moi:true}
+  ].filter(g=>g.ds.length)};
+}
 function fillCustSelects(){
-  let list;
-  if(__listNames.length) list=__listNames;                                   // giữ nguyên thứ tự trong sheet 5 bil
-  else if(__nrtNames.length) list=[...__nrtNames].sort((a,b)=>a.localeCompare(b,'vi'));
-  else list=[...new Set(__custRows.map(r=>r.cust))].sort((a,b)=>a.localeCompare(b,'vi'));
-  const names=new Set(list);
+  const kq=knDsKhach();
+  const names=new Set(kq.nhom.flatMap(g=>g.ds));
+  const esc=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const html=kq.nhom.map(g=>{
+    const opts=g.ds.map(n=>`<option value="${esc(n)}">${esc(n)}${g.moi?' · mới':''}</option>`).join('');
+    return g.ten?`<optgroup label="${esc(g.ten)}">${opts}</optgroup>`:opts;
+  }).join('');
   ['custSel','uSel'].forEach(id=>{
     const sel=document.getElementById(id);
     const prev=sel.value;
-    sel.innerHTML=list.map(n=>`<option value="${n}">${n}</option>`).join('');
+    sel.innerHTML=html;
     if(prev&&names.has(prev)) sel.value=prev;
+    sel.title=kq.loc?('Tự lọc theo NAV + danh mục. Ẩn '+kq.an.length+' khách đã tất toán'+(kq.an.length?': '+kq.an.join(', '):'')):'';
   });
+  window.__knDsKhach=kq;   // kiểm tra nhanh trong console
 }
 function setupCustomerPage(rows){
-  __custRows=rows;
+  __custRows=rows; __keyinXong=true;
   fillCustSelects();
   renderCustomerPage();
   renderUpdatePage();
