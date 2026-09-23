@@ -2004,7 +2004,7 @@ function load5bil(rows){ // danh sách khách chuẩn: sheet "5 bil" cột B, t�
 /* Danh sách khách TỰ ĐỘNG (23/09/2026, anh Khoa yêu cầu) — chỉ ĐỌC sheet, không ghi gì vào sheet:
    1) Đang cầm mã      : có dòng ON trong Key in, có mã, KL > 0
    2) Chỉ còn tiền     : không cầm mã nhưng NAV (NAV - Real Time cột B) hoặc dư nợ khác 0 -> vẫn phải hiện
-   3) Khách mới Key in : có dòng ON trong Key in nhưng chưa có trong danh sách sheet "5 bil"
+   3) Khách mới Key in : có dòng ON trong Key in nhưng chưa có trong sheet "5 bil" -> xếp chung vào 1) hoặc 2)
    Khách NAV = 0, nợ = 0, không cầm mã (đã tất toán) -> ẩn.
    Chỉ lọc khi đã tải xong CẢ Key in và NAV - Real Time; chưa đủ dữ liệu thì hiện đủ danh sách cũ (không ẩn nhầm ai). */
 let __keyinXong=false;
@@ -2021,14 +2021,16 @@ function knDsKhach(){
   const moi=keyin.filter(n=>!coGoc.has(n)).sort(vi);
   const camMa=new Set(__custRows.filter(r=>r.ticker&&r.qty>0).map(r=>r.cust));
   const conTien=n=>{ const x=__nrt[n]; return !!x && (Math.abs(x.nav||0)>=KN_NAV_BO_QUA || Math.abs(x.debt||0)>=KN_NAV_BO_QUA); };
-  const tatCa=[...goc, ...__nrtNames.filter(n=>!coGoc.has(n)&&!moi.includes(n))];
+  /* Khách mới (có dòng ON trong Key in, chưa có trong 5 bil — vd Huy-03) xếp CHUNG với khách thường, nối sau danh sách gốc.
+     Dòng ON = tài khoản đang hoạt động, nên khách mới không bị ẩn dù NAV - Real Time chưa có tên. */
+  const coMoi=new Set(moi);
+  const tatCa=[...goc, ...__nrtNames.filter(n=>!coGoc.has(n)&&!coMoi.has(n)), ...moi];
   const nhomCam=tatCa.filter(n=>camMa.has(n));
-  const nhomTien=tatCa.filter(n=>!camMa.has(n)&&conTien(n));
-  const an=tatCa.filter(n=>!camMa.has(n)&&!conTien(n));
-  return {loc:true, an, nhom:[
+  const nhomTien=tatCa.filter(n=>!camMa.has(n)&&(conTien(n)||coMoi.has(n)));
+  const an=tatCa.filter(n=>!camMa.has(n)&&!conTien(n)&&!coMoi.has(n));
+  return {loc:true, an, moi, nhom:[
     {ten:'Đang cầm mã ('+nhomCam.length+')', ds:nhomCam},
-    {ten:'Chỉ còn tiền — không cầm mã ('+nhomTien.length+')', ds:nhomTien},
-    {ten:'Khách mới từ Key in ('+moi.length+')', ds:moi, moi:true}
+    {ten:'Chỉ còn tiền — không cầm mã ('+nhomTien.length+')', ds:nhomTien}
   ].filter(g=>g.ds.length)};
 }
 function fillCustSelects(){
@@ -2036,7 +2038,7 @@ function fillCustSelects(){
   const names=new Set(kq.nhom.flatMap(g=>g.ds));
   const esc=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
   const html=kq.nhom.map(g=>{
-    const opts=g.ds.map(n=>`<option value="${esc(n)}">${esc(n)}${g.moi?' · mới':''}</option>`).join('');
+    const opts=g.ds.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
     return g.ten?`<optgroup label="${esc(g.ten)}">${opts}</optgroup>`:opts;
   }).join('');
   ['custSel','uSel'].forEach(id=>{
