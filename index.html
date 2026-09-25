@@ -778,6 +778,30 @@
   .u-side.b{background:#E9F6EE;color:var(--green-dark);}
   .u-side.s{background:#FDECEE;color:var(--red);}
   #uTrade tbody td{font-variant-numeric:tabular-nums;}
+  /* So lenh kieu HSC: lenh tu dong do len = da khop -> Hoan tat, gia khop = gia */
+  @media (min-width:861px){
+  #uTrade{border-collapse:separate;border-spacing:0;width:100%;min-width:760px;}
+  #uTrade thead th{background:#E9ECF0;color:#4B5563;font-weight:600;font-size:12.5px;text-align:right;padding:9px 12px;white-space:nowrap;border-right:1px solid #fff;text-transform:none;letter-spacing:0;}
+  #uTrade thead th.l{text-align:left;} #uTrade thead th.c{text-align:center;}
+  #uTrade thead th[data-k]{cursor:pointer;user-select:none;}
+  #uTrade thead th i{display:inline-block;width:8px;margin-left:5px;opacity:.45;font-style:normal;font-size:10px;}
+  #uTrade thead th i::after{content:'\2195';}
+  #uTrade thead th.up i::after{content:'\25B2';} #uTrade thead th.dn i::after{content:'\25BC';}
+  #uTrade thead th.up i,#uTrade thead th.dn i{opacity:.9;}
+  #uTrade tbody td{padding:10px 12px;text-align:right;white-space:nowrap;border-bottom:1px solid #EEF0F3;font-size:13.5px;}
+  #uTrade tbody tr:nth-child(even) td{background:#F6F7F9;}
+  #uTrade tbody tr:hover td{background:#EEF6F1;}
+  #uTrade td.ma{text-align:left;font-weight:700;color:#111827;}
+  #uTrade td.loai{text-align:center;font-weight:600;} #uTrade td.loai.b{color:var(--green);} #uTrade td.loai.s{color:var(--red);}
+  #uTrade td.tt{text-align:center;color:var(--green);font-weight:600;}
+  #uTrade td.cho{color:#9AA3A0;}
+  #uTrade tfoot td{padding:10px 12px;text-align:right;font-weight:700;border-top:2px solid #D8DDE3;white-space:nowrap;}
+  #uTrade tfoot td:first-child{text-align:left;}
+  }
+  @media (max-width:860px){   /* dien thoai: bang thanh the -> bo 2 cot trung (SL cho khop '-', Gia khop = Gia) */
+    #uTrade tbody td:nth-child(5),#uTrade tbody td:nth-child(7),#uTrade tfoot td:nth-child(5),#uTrade tfoot td:nth-child(7){display:none;}
+    #uTrade td.loai.b{color:var(--green);} #uTrade td.loai.s{color:var(--red);} #uTrade td.tt{color:var(--green);}
+  }
   /* ===== lịch sử giao dịch ===== */
   .hist-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:11px;}
   .hist-search{position:relative;flex:1;min-width:230px;max-width:380px;}
@@ -1200,8 +1224,8 @@
     </div>
     <div id="uTdBody" style="overflow:auto;">
       <table id="uTrade">
-        <thead><tr><th>Lệnh</th><th>Giá</th><th>Khối lượng</th><th>Giá trị</th></tr></thead>
-        <tbody><tr><td colspan="4" class="loading">Đang tải…</td></tr></tbody>
+        <thead><tr><th data-k="ticker" class="l">Mã CK<i></i></th><th data-k="side" class="c">Loại<i></i></th><th>Giá</th><th data-k="vol">Số lượng<i></i></th><th>SL chờ khớp</th><th data-k="vol">SL khớp<i></i></th><th>Giá khớp</th><th data-k="value">Giá trị lệnh<i></i></th><th class="c">Trạng thái</th></tr></thead>
+        <tbody><tr><td colspan="9" class="loading">Đang tải…</td></tr></tbody>
         <tfoot></tfoot>
       </table>
     </div>
@@ -2273,12 +2297,17 @@ document.querySelectorAll('#cuRanges button').forEach(b=>b.addEventListener('cli
 /* ===== KH Update: giao dịch hôm nay của chính khách đang xem =====
    Cùng nguồn với bảng "Giao dịch trong ngày" ở trang Khách hàng (sheet Trans_All),
    gộp lệnh trùng mã + giá. Có nút Ẩn/Hiện, nhớ lựa chọn trong máy. */
+let __uTdSort={k:'value', d:-1};
+document.querySelectorAll('#uTrade thead th[data-k]').forEach(th=>th.addEventListener('click',()=>{
+  const k=th.dataset.k; __uTdSort = (__uTdSort.k===k) ? {k, d:-__uTdSort.d} : {k, d:(k==='ticker'||k==='side')?1:-1};
+  const e=document.getElementById('uSel'); if(e&&e.value) renderUpdateTrades(e.value);
+}));
 function renderUpdateTrades(name){
   const tb=document.querySelector('#uTrade tbody'); if(!tb) return;
   const tf=document.querySelector('#uTrade tfoot');
   const tt=document.getElementById('uTdTitle'), sm=document.getElementById('uTdSum');
   if(!allTrans.length){
-    tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#999;">Đang tải…</td></tr>';
+    tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:#999;">Đang tải…</td></tr>';
     tf.innerHTML=''; if(sm) sm.textContent=''; return;
   }
   const maxT=Math.max(...allTrans.map(t=>t.d.getTime()));
@@ -2291,18 +2320,24 @@ function renderUpdateTrades(name){
     else map.set(k,{...t});
   }
   const list=[...map.values()].sort((a,b)=>b.value-a.value);
+  // Sap xep: bam tieu de cot (nhu HSC); mac dinh gia tri lenh giam dan
+  const S=__uTdSort, dir=S.d;
+  list.sort((a,b)=>{ const x=a[S.k], y=b[S.k]; return (typeof x==='string' ? String(x).localeCompare(String(y)) : x-y)*dir || (b.value-a.value); });
+  document.querySelectorAll('#uTrade thead th[data-k]').forEach(th=>{ th.classList.toggle('up', th.dataset.k===S.k && dir>0); th.classList.toggle('dn', th.dataset.k===S.k && dir<0); });
+  const gia=p=>(p/1000).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});   // HSC ghi gia theo nghin dong: 46.50
   tb.innerHTML=list.length?list.map(t=>{
     const mua=t.side==='BUY';
     return `<tr>
-      <td><span class="u-side ${mua?'b':'s'}">${mua?'MUA':'BÁN'}</span><b>${t.ticker}</b></td>
-      <td class="${mua?'price-buy':'price-sell'}">${fmt(t.price)} đ</td>
-      <td>${fmt(t.vol)}</td><td>${fmt(t.value)} đ</td></tr>`;
-  }).join('') : '<tr><td colspan="4" style="text-align:center;color:#999;">Hôm nay chưa có lệnh nào</td></tr>';
+      <td class="ma">${t.ticker}</td>
+      <td class="loai ${mua?'b':'s'}">${mua?'MUA':'BÁN'}</td>
+      <td>${gia(t.price)}</td><td>${fmt(t.vol)}</td><td class="cho">-</td><td>${fmt(t.vol)}</td>
+      <td>${gia(t.price)}</td><td>${fmt(t.value)}</td><td class="tt">Hoàn tất</td></tr>`;
+  }).join('') : '<tr><td colspan="9" style="text-align:center;color:#999;">Hôm nay chưa có lệnh nào</td></tr>';
   const tong=s=>list.filter(t=>t.side===s).reduce((a,t)=>a+t.value,0);
-  const mua=tong('BUY'), ban=tong('SELL');
+  const mua=tong('BUY'), ban=tong('SELL'), kl=list.reduce((a,t)=>a+t.vol,0);
   tf.innerHTML=list.length?
-    `<tr><td>Tổng ${list.length} lệnh</td><td></td><td>${fmt(list.reduce((a,t)=>a+t.vol,0))}</td>
-     <td>${fmt(mua+ban)} đ</td></tr>`:'';
+    `<tr><td colspan="3">Tổng ${list.length} lệnh</td><td>${fmt(kl)}</td><td></td><td>${fmt(kl)}</td><td></td>
+     <td>${fmt(mua+ban)}</td><td></td></tr>`:'';
   if(sm) sm.innerHTML=list.length
     ? `Mua <b class="b">${fmt(mua)} đ</b> · Bán <b class="s">${fmt(ban)} đ</b>`
     : '<span style="color:#9aa3a0;">Không có lệnh</span>';
