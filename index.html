@@ -2318,9 +2318,6 @@ function renderUpdateTrades(name){
   // Moi dong Key in la mot lenh rieng — KHONG gop (nhu so lenh HSC). Giu thu tu Key in (i).
   const list=[];
   allTrans.forEach((t,i)=>{ if(t.cust===name && ngayCua(t.d)===homNay) list.push(Object.assign({i}, t)); });
-  let phienTruoc='';
-  if(!list.length){ const ds=allTrans.filter(t=>t.cust===name).map(t=>t.d.getTime()); if(ds.length){ const mx=Math.max(...ds); const n=allTrans.filter(t=>t.cust===name && t.d.getTime()===mx).length;
-      phienTruoc=' · phiên gần nhất '+new Date(mx).toLocaleDateString('vi-VN')+': '+n+' lệnh (xem ở Lịch sử giao dịch)'; } }
   // Sap xep: bam tieu de cot (nhu HSC); mac dinh gia tri lenh giam dan
   const S=__uTdSort, dir=S.d;
   list.sort((a,b)=>{ const x=a[S.k], y=b[S.k]; return (typeof x==='string' ? String(x).localeCompare(String(y)) : x-y)*dir || (a.i-b.i); });
@@ -2333,7 +2330,7 @@ function renderUpdateTrades(name){
       <td class="loai ${mua?'b':'s'}">${mua?'MUA':'BÁN'}</td>
       <td>${gia(t.price)}</td><td>${fmt(t.vol)}</td><td class="cho">-</td><td>${fmt(t.vol)}</td>
       <td>${gia(t.price)}</td><td>${fmt(t.value)}</td><td class="tt">Hoàn tất</td></tr>`;
-  }).join('') : '<tr><td colspan="9" style="text-align:center;color:#999;">Hôm nay chưa có lệnh nào'+phienTruoc+'</td></tr>';
+  }).join('') : '<tr><td colspan="9" style="text-align:center;color:#999;">Hôm nay chưa có lệnh nào</td></tr>';
   const tong=s=>list.filter(t=>t.side===s).reduce((a,t)=>a+t.value,0);
   const mua=tong('BUY'), ban=tong('SELL'), kl=list.reduce((a,t)=>a+t.vol,0);
   tf.innerHTML=list.length?
