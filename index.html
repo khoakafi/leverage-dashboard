@@ -2297,7 +2297,7 @@ document.querySelectorAll('#cuRanges button').forEach(b=>b.addEventListener('cli
 /* ===== KH Update: giao dịch hôm nay của chính khách đang xem =====
    Cùng nguồn với bảng "Giao dịch trong ngày" ở trang Khách hàng (sheet Trans_All),
    gộp lệnh trùng mã + giá. Có nút Ẩn/Hiện, nhớ lựa chọn trong máy. */
-let __uTdSort={k:'value', d:-1};
+let __uTdSort={k:'i', d:1};   // mac dinh: dung thu tu Key in
 document.querySelectorAll('#uTrade thead th[data-k]').forEach(th=>th.addEventListener('click',()=>{
   const k=th.dataset.k; __uTdSort = (__uTdSort.k===k) ? {k, d:-__uTdSort.d} : {k, d:(k==='ticker'||k==='side')?1:-1};
   const e=document.getElementById('uSel'); if(e&&e.value) renderUpdateTrades(e.value);
@@ -2310,19 +2310,20 @@ function renderUpdateTrades(name){
     tb.innerHTML='<tr><td colspan="9" style="text-align:center;color:#999;">Đang tải…</td></tr>';
     tf.innerHTML=''; if(sm) sm.textContent=''; return;
   }
-  const maxT=Math.max(...allTrans.map(t=>t.d.getTime()));
-  if(tt) tt.textContent='Giao dịch hôm nay · '+new Date(maxT).toLocaleDateString('vi-VN');
-  const rows=allTrans.filter(t=>t.cust===name && t.d.getTime()===maxT);
-  const map=new Map();
-  for(const t of rows){
-    const k=t.side+'|'+t.ticker+'|'+t.price;
-    if(map.has(k)){ const m=map.get(k); m.vol+=t.vol; m.value+=t.value; }
-    else map.set(k,{...t});
-  }
-  const list=[...map.values()].sort((a,b)=>b.value-a.value);
+  /* HOM NAY theo gio VN — truoc day lay ngay moi nhat co lenh trong Sheet, nen sang 25/9 chua ai dat lenh
+     van hien lenh 24/9 duoi tieu de 'hom nay'. */
+  const vn=new Date(Date.now()+7*3600e3), homNay=vn.getUTCFullYear()+'-'+vn.getUTCMonth()+'-'+vn.getUTCDate();
+  const ngayCua=d=>d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();   // cellDate: ngay cua Sheet (gio may)
+  if(tt) tt.textContent='Giao dịch hôm nay · '+vn.getUTCDate()+'/'+(vn.getUTCMonth()+1)+'/'+vn.getUTCFullYear();
+  // Moi dong Key in la mot lenh rieng — KHONG gop (nhu so lenh HSC). Giu thu tu Key in (i).
+  const list=[];
+  allTrans.forEach((t,i)=>{ if(t.cust===name && ngayCua(t.d)===homNay) list.push(Object.assign({i}, t)); });
+  let phienTruoc='';
+  if(!list.length){ const ds=allTrans.filter(t=>t.cust===name).map(t=>t.d.getTime()); if(ds.length){ const mx=Math.max(...ds); const n=allTrans.filter(t=>t.cust===name && t.d.getTime()===mx).length;
+      phienTruoc=' · phiên gần nhất '+new Date(mx).toLocaleDateString('vi-VN')+': '+n+' lệnh (xem ở Lịch sử giao dịch)'; } }
   // Sap xep: bam tieu de cot (nhu HSC); mac dinh gia tri lenh giam dan
   const S=__uTdSort, dir=S.d;
-  list.sort((a,b)=>{ const x=a[S.k], y=b[S.k]; return (typeof x==='string' ? String(x).localeCompare(String(y)) : x-y)*dir || (b.value-a.value); });
+  list.sort((a,b)=>{ const x=a[S.k], y=b[S.k]; return (typeof x==='string' ? String(x).localeCompare(String(y)) : x-y)*dir || (a.i-b.i); });
   document.querySelectorAll('#uTrade thead th[data-k]').forEach(th=>{ th.classList.toggle('up', th.dataset.k===S.k && dir>0); th.classList.toggle('dn', th.dataset.k===S.k && dir<0); });
   const gia=p=>(p/1000).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});   // HSC ghi gia theo nghin dong: 46.50
   tb.innerHTML=list.length?list.map(t=>{
@@ -2332,7 +2333,7 @@ function renderUpdateTrades(name){
       <td class="loai ${mua?'b':'s'}">${mua?'MUA':'BÁN'}</td>
       <td>${gia(t.price)}</td><td>${fmt(t.vol)}</td><td class="cho">-</td><td>${fmt(t.vol)}</td>
       <td>${gia(t.price)}</td><td>${fmt(t.value)}</td><td class="tt">Hoàn tất</td></tr>`;
-  }).join('') : '<tr><td colspan="9" style="text-align:center;color:#999;">Hôm nay chưa có lệnh nào</td></tr>';
+  }).join('') : '<tr><td colspan="9" style="text-align:center;color:#999;">Hôm nay chưa có lệnh nào'+phienTruoc+'</td></tr>';
   const tong=s=>list.filter(t=>t.side===s).reduce((a,t)=>a+t.value,0);
   const mua=tong('BUY'), ban=tong('SELL'), kl=list.reduce((a,t)=>a+t.vol,0);
   tf.innerHTML=list.length?
