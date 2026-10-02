@@ -102,6 +102,8 @@
   }
   tfoot td:first-child{text-align:left;}
   #custTableWrap{max-height:305px;}
+  .kh-lai{display:inline-block;margin-left:7px;font-size:11.5px;font-weight:700;color:#127A3B;background:#E9F6EE;border-radius:999px;padding:1px 8px;vertical-align:1px;}
+  .kh-lech{display:inline-block;background:#FDECEC;color:#C62828;font-weight:800;border-radius:6px;padding:2px 8px;}
   /* ===== charts area ===== */
   .charts{display:flex;gap:20px;margin-top:12px;}
   .chart-box{background:#fff;box-shadow:var(--card-shadow);border-radius:2px;padding:8px 12px;}
@@ -317,6 +319,8 @@
     #custTable td:nth-child(6){grid-column:4 / 5;grid-row:2;align-items:flex-end;}
     #custTable tfoot tr{background:#EAF6EF;border-top:1px solid #CFE9DA;border-bottom:none;}
     #custTable tfoot td{color:var(--green-dark);}
+    #custTable td:nth-child(8){grid-column:1 / 5;grid-row:3;align-items:flex-start;}
+    #custTable tbody td:nth-child(8):empty,#custTable tfoot td:nth-child(8):empty{display:none !important;}
     #custTable tbody td:empty,#custTable tfoot td:empty{display:block;}
     #custTable tbody td:empty::before,#custTable tfoot td:empty::before{display:none;}
 
@@ -954,8 +958,9 @@
         <th class="sth" data-k="intr">Total Interest<span class="arr"></span></th>
         <th class="sth" data-k="delta">Delta<span class="arr"></span></th>
         <th class="sth" data-k="rate">Rates<span class="arr"></span></th>
+        <th class="sth" data-k="lech" title="NAV + Dư nợ − Danh mục. Chỉ hiện khi lệch từ 30 triệu">Lệch NAV+Nợ−DM<span class="arr"></span></th>
       </tr></thead>
-      <tbody><tr><td colspan="7" class="loading">Đang tải dữ liệu…</td></tr></tbody>
+      <tbody><tr><td colspan="8" class="loading">Đang tải dữ liệu…</td></tr></tbody>
       <tfoot></tfoot>
     </table>
   </div>
@@ -1445,25 +1450,31 @@ function renderCustomers(rows){
   __ovCust = rows
     .filter(r => r[0] && r[0].trim() && num(r[3])>0)
     .map(r => ({name:r[0].trim(), nav:num(r[1]), debt:num(r[2]), port:num(r[3]),
-                intr:num(r[4]), rate:num(r[5]), delta:num(r[6])}));
+                intr:num(r[4]), rate:num(r[5]), delta:num(r[6]),
+                lech:num(r[1])+num(r[2])-num(r[3])}));   // NAV + Dư nợ − Danh mục: phải ~0, lệch >= 30tr là sổ có chỗ sai
   renderCustTable();
 }
+const KH_LECH_NGUONG = 30e6;   // anh Khoa 02/10/2026: lệch từ 30 triệu mới tô, dưới thì ẩn
+let __laiKH = {};              // lãi suất vay từng khách — NAV - Real Time, khối phải: I = tên, P = Lãi
+function khLaiTxt(n){ const v=__laiKH[n]; if(!(v>0)) return ''; const p=v<=1?v*100:v; return (Math.round(p*100)/100)+'%'; }
 function renderCustTable(){
   const {k,dir}=__ovSort;
   const data=[...__ovCust].sort((a,b)=>
-    (k==='name' ? a.name.localeCompare(b.name,'vi') : (a[k]-b[k]))*dir);
+    (k==='name' ? a.name.localeCompare(b.name,'vi') : k==='lech' ? (Math.abs(a.lech)-Math.abs(b.lech)) : (a[k]-b[k]))*dir);
 
   const tb = document.querySelector('#custTable tbody');
   tb.innerHTML = data.map(d=>`<tr>
-      <td>${d.name}</td><td>${fmt(d.nav)}</td><td>${fmt(d.debt)}</td><td>${fmt(d.port)}</td>
+      <td>${d.name}${khLaiTxt(d.name)?`<span class="kh-lai">${khLaiTxt(d.name)}</span>`:''}</td><td>${fmt(d.nav)}</td><td>${fmt(d.debt)}</td><td>${fmt(d.port)}</td>
       <td>${fmt(d.intr)}</td><td>${deltaHtml(d.delta)}</td><td>${Math.round(d.rate)}%</td>
+      <td>${Math.abs(d.lech)>=KH_LECH_NGUONG?`<span class="kh-lech">${fmt(d.lech)}</span>`:''}</td>
     </tr>`).join('');
+  const nLech = data.filter(d=>Math.abs(d.lech)>=KH_LECH_NGUONG).length;
 
   const t = data.reduce((a,d)=>({nav:a.nav+d.nav, debt:a.debt+d.debt, port:a.port+d.port, intr:a.intr+d.intr}),
                         {nav:0,debt:0,port:0,intr:0});
   document.querySelector('#custTable tfoot').innerHTML =
     `<tr><td>Total</td><td>${fmt(t.nav)}</td><td>${fmt(t.debt)}</td><td>${fmt(t.port)}</td>
-     <td>${fmt(t.intr)}</td><td></td><td></td></tr>`;
+     <td>${fmt(t.intr)}</td><td></td><td></td><td>${nLech?`<span class="kh-lech">${nLech} KH lệch</span>`:''}</td></tr>`;
 
   document.querySelectorAll('#custTable th.sth').forEach(th=>{
     th.querySelector('.arr').textContent = th.dataset.k===k ? (dir<0?'▼':'▲') : '⇅';
@@ -2093,6 +2104,8 @@ function loadNRT(rows){ // NAV - Real Time, khối trái cột A-G
   __nrt={}; __nrtNames=[];
   let started=false; // chỉ lấy danh sách khách từ dòng C.P trở xuống
   for(const r of rows){
+    // khối phải (I = tên, P = Lãi): đọc TRƯỚC khi bỏ dòng — Anh Thiện nằm chung hàng tiêu đề 'Khách Hàng' của khối trái
+    const n2=cellStr(r[8]); if(n2 && n2!=='Khách Hàng') __laiKH[n2]=cellNum(r[15]);
     const n=cellStr(r[0]);
     if(!n||n==='Khách Hàng'||n==='dạ') continue;
     __nrt[n]={nav:cellNum(r[1]), debt:cellNum(r[3]), dailyInt:cellNum(r[5]), rate:cellStr(r[6])};
@@ -2102,6 +2115,7 @@ function loadNRT(rows){ // NAV - Real Time, khối trái cột A-G
   fillCustSelects();
   renderCustomerPage();
   renderUpdatePage();
+  if(__ovCust.length) renderCustTable();
 }
 function loadCED(rows){ // Check End day, dòng 5-27: B=tên, K=giá trị
   __ced={};
@@ -2683,11 +2697,11 @@ if(authValid()) start();
   }
   /* Nhãn ngắn cho bảng Tổng quan (màn hình hẹp) */
   var SHORT = {
-    custTable: ['', 'NAV', 'Dư nợ', 'Danh mục', 'Lãi vay', 'Δ Nợ + lãi', 'Lãi suất'],
+    custTable: ['', 'NAV', 'Dư nợ', 'Danh mục', 'Lãi vay', 'Δ Nợ + lãi', 'Tỷ lệ', 'Lệch NAV + Nợ − Danh mục'],
     uHold: ['', 'Giá vốn', 'Giá TT', 'KL', 'Lãi/lỗ', '%']
   };
   var CHIP = {name:'Tên', nav:'NAV', debt:'Dư nợ', port:'Danh mục',
-              intr:'Lãi vay', delta:'Δ Nợ + lãi', rate:'Lãi suất'};
+              intr:'Lãi vay', delta:'Δ Nợ + lãi', rate:'Tỷ lệ', lech:'Lệch'};
 
   function decorateTable(tb){
     if (tb.classList.contains('lv-keep')) return;
