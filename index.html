@@ -1455,8 +1455,16 @@ function renderCustomers(rows){
   renderCustTable();
 }
 const KH_LECH_NGUONG = 30e6;   // anh Khoa 02/10/2026: lệch từ 30 triệu mới tô, dưới thì ẩn
-let __laiKH = {};              // lãi suất vay từng khách — NAV - Real Time, khối phải: I = tên, P = Lãi
-function khLaiTxt(n){ const v=__laiKH[n]; if(!(v>0)) return ''; const p=v<=1?v*100:v; return (Math.round(p*100)/100)+'%'; }
+/* Lãi suất vay HỢP ĐỒNG từng khách = tab Overview: A = tên, C = "Update" (lãi hiện hành), trống thì B = "Lãi".
+   (09/10/2026: trước lấy cột P của NAV - Real Time — đó là lãi BÌNH QUÂN thực tế, ra 4.85% / 6.89% / 10.23%, không phải 11–12%.) */
+let __laiKH = {}, __laiNRT = {};
+function khLaiTxt(n){ const v=(__laiKH[n]>0)?__laiKH[n]:__laiNRT[n]; if(!(v>0)) return ''; const p=v<=1?v*100:v; return (Math.round(p*100)/100)+'%'; }
+function loadLaiHD(rows){
+  __laiKH = {};
+  for(const r of rows){ const n=cellStr(r[0]); if(!n||n==='Tên') continue;
+    const v=cellNum(r[2])>0?cellNum(r[2]):cellNum(r[1]); if(v>0) __laiKH[n]=v; }
+  if(__ovCust.length) renderCustTable();
+}
 function renderCustTable(){
   const {k,dir}=__ovSort;
   const data=[...__ovCust].sort((a,b)=>
@@ -2105,7 +2113,7 @@ function loadNRT(rows){ // NAV - Real Time, khối trái cột A-G
   let started=false; // chỉ lấy danh sách khách từ dòng C.P trở xuống
   for(const r of rows){
     // khối phải (I = tên, P = Lãi): đọc TRƯỚC khi bỏ dòng — Anh Thiện nằm chung hàng tiêu đề 'Khách Hàng' của khối trái
-    const n2=cellStr(r[8]); if(n2 && n2!=='Khách Hàng') __laiKH[n2]=cellNum(r[15]);
+    const n2=cellStr(r[8]); if(n2 && n2!=='Khách Hàng') __laiNRT[n2]=cellNum(r[15]);   // chỉ dự phòng khi Overview không có tên
     const n=cellStr(r[0]);
     if(!n||n==='Khách Hàng'||n==='dạ') continue;
     __nrt[n]={nav:cellNum(r[1]), debt:cellNum(r[3]), dailyInt:cellNum(r[5]), rate:cellStr(r[6])};
@@ -2525,6 +2533,7 @@ async function loadAll(){
     fetchSheetJSON('NAV - Batch').then(renderInterest),
     fetchKeyInFull().then(renderInsight),
     fetchSheetJSON('NAV - Real Time').then(loadNRT),
+    fetchSheetJSON('Overview ').then(loadLaiHD).catch(e=>console.warn('Overview (lãi hợp đồng) lỗi:',e)),
     fetchSheetJSON('Check End day').then(loadCED),
     fetchSheetJSON('API').then(loadAPI),
     fetchSheetJSON('5 bil').then(load5bil)
