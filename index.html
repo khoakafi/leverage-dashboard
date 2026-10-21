@@ -111,6 +111,16 @@
   #stocksBox{flex:2;min-width:0;}
   #interestBox{flex:3;min-width:0;}
   .chart-holder{position:relative;height:280px;}
+  .lv-sub{font-size:11.5px;font-weight:500;color:#8a948f;margin-left:6px;}
+  .lv-ihead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+  .lv-ihead h4{margin:0;}
+  .lv-ictl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .lv-ictl .cu-ranges button{margin-left:0;}
+  .lv-zoom{border:1px solid #E5E5E5;background:#fff;color:#444;font:inherit;font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;cursor:pointer;}
+  .lv-zoom:hover{border-color:var(--green);color:var(--green);}
+  #interestBox.lv-full{position:fixed;inset:20px;z-index:2000;display:flex;flex-direction:column;border-radius:12px;padding:14px 18px;}
+  #interestBox.lv-full .chart-holder{flex:1;height:auto !important;}
+  body.lv-full-on::after{content:'';position:fixed;inset:0;background:rgba(15,23,20,.45);z-index:1999;}
   /* ===== performance page ===== */
   #tradeChartHolder{position:relative;height:340px;}
   .perf-mid{display:flex;align-items:center;gap:18px;margin:10px 0 8px;}
@@ -967,11 +977,13 @@
 
   <div class="charts">
     <div class="chart-box" id="stocksBox">
-      <h4>Total of Stocks</h4>
+      <h4>Total of Stocks <span class="lv-sub" id="stocksSub"></span></h4>
       <div class="chart-holder"><canvas id="stocksChart"></canvas></div>
     </div>
     <div class="chart-box" id="interestBox">
-      <h4>&nbsp;</h4>
+      <div class="lv-ihead"><h4>Lãi vay mỗi ngày</h4>
+        <div class="lv-ictl"><div class="cu-ranges" id="intRanges"><button data-r="90">3 tháng</button><button data-r="180">6 tháng</button><button data-r="0" class="active">Tất cả</button></div>
+        <button type="button" class="lv-zoom" id="intZoom" title="Phóng to">⤢ Phóng to</button></div></div>
       <div class="chart-holder"><canvas id="interestChart"></canvas></div>
     </div>
   </div>
@@ -1513,43 +1525,74 @@ const LV_TIP = {
   boxWidth:9, boxHeight:9, caretSize:6
 };
 
-let stocksChart;
+let stocksChart, __stockDeals=null;
+/* 21/10/2026: tab "Total Stock" trong Sheet thiếu 13 mã (CMG, TCB, VNM, VSC, EIB, MBB…: 13,0 tỷ so với 19,5 tỷ danh mục).
+   Giờ tính thẳng từ Key in (deal ON): số cổ phiếu × giá tab API (chưa có giá thì giá mua). Mã -WFT (chờ về) gộp vào mã gốc.
+   "Total Stock" chỉ còn là dự phòng khi Key in lỗi. */
 function renderStocks(rows){
-  const data = rows.filter(r=>r[0]&&r[0].trim()&&num(r[1])>=0&&r[0].trim().length<=10)
-                   .map(r=>({t:r[0].trim(), v:num(r[1])}))
-                   .filter(d=>d.v>0 || d.t)
-                   .sort((a,b)=>b.v-a.v);
-  const mob = lvMobile();
-  const D = mob ? data.slice(0,10) : data;     // mobile: 10 mã lớn nhất cho dễ đọc
-  const ctx=document.getElementById('stocksChart');
-  if (mob){                                     // cao theo số mã -> không bị bóp dẹp
-    const hold = ctx.closest('.chart-holder');
-    if (hold) hold.style.height = Math.max(200, D.length*30+30) + 'px';
+  if(__stockDeals) return;
+  const data = rows.filter(r=>r[0]&&r[0].trim()&&num(r[1])>0&&r[0].trim().length<=10)
+                   .map(r=>({t:r[0].trim(), v:num(r[1])*1000, q:null, wft:0}));
+  drawStocks(data.sort((a,b)=>b.v-a.v), 'theo tab Total Stock');
+}
+function renderStocksKeyIn(deals){
+  if(deals) __stockDeals=deals;
+  if(!__stockDeals) return;
+  const agg={};
+  for(const d of __stockDeals){
+    if(!d.on||!(d.qty>0)) continue;
+    const base=d.ticker.replace(/-WFT$/i,'').trim(); if(!base) continue;
+    const a=agg[base]||(agg[base]={t:base,q:0,wft:0,v:0});
+    const px=__apiPrice[d.ticker]||__apiPrice[base]||d.price||0;
+    a.q+=d.qty; if(/-WFT$/i.test(d.ticker)) a.wft+=d.qty; a.v+=d.qty*px;
   }
+  const data=Object.values(agg).filter(a=>a.v>0).sort((x,y)=>y.v-x.v);
+  const tong=data.reduce((s,a)=>s+a.v,0);
+  drawStocks(data, data.length+' mã · '+lvShort(tong));
+}
+function drawStocks(D, sub){
+  const mob = lvMobile();
+  const subEl=document.getElementById('stocksSub'); if(subEl) subEl.textContent=sub?('· '+sub):'';
+  const ctx=document.getElementById('stocksChart');
+  const hold = ctx.closest('.chart-holder');
+  const h = Math.max(mob?200:280, D.length*(mob?30:24)+30);       // cao theo số mã -> thanh không bị bóp dẹp
+  if (hold) hold.style.height = h + 'px';
+  if (!mob){ const ih=document.querySelector('#interestBox .chart-holder'); if(ih) ih.style.height = Math.max(280, h-34) + 'px'; }
+  const slTxt = a => a.q==null ? '' : a.q.toLocaleString('vi-VN')+' cp';
+  /* Đo bằng trục (không dùng phần tử thanh: lúc nhãn được tính thanh còn đang chạy hiệu ứng, rộng = 0) */
+  const vuaTrong = c => { const a=D[c.dataIndex]; if(!a||a.q==null) return false;
+    const x=c.chart.scales.x; if(!x) return false;
+    return Math.abs(x.getPixelForValue(a.v)-x.getPixelForValue(0)) > slTxt(a).length*6.6+14; };
+  if(stocksChart){ stocksChart.destroy(); stocksChart=null; }
   const cfg={
     type:'bar',
     data:{labels:D.map(d=>d.t),
       datasets:[{data:D.map(d=>d.v), backgroundColor:mob?GREEN:GRAY,
-        barPercentage:mob?.82:.72, categoryPercentage:.85, borderRadius:mob?5:0}]},
+        barPercentage:mob?.82:.78, categoryPercentage:.88, borderRadius:mob?5:0}]},
     options:{
       indexAxis:'y', maintainAspectRatio:false, responsive:true,
       interaction:{mode:'nearest', axis:'y', intersect:false},
-      layout:{padding:{right:mob?58:44}},
+      layout:{padding:{right:mob?96:118}},
       scales:{
         x:{grid:{display:false}, display:!mob,
-           ticks:{callback:v=>(v/1e6)+'M', color:'#666', font:{size:11}}, border:{display:false}},
+           ticks:{callback:v=>lvShort(v), color:'#666', font:{size:11}}, border:{display:false}},
         y:{grid:{display:false}, ticks:{color:'#444', font:{size:mob?12.5:11.5}}, border:{display:false}}
       },
       plugins:{
         legend:{display:false},
-        tooltip:Object.assign({}, LV_TIP, {callbacks:{label:c=>fmt(c.raw)+' đ'}}),
-        datalabels:{display:true, anchor:'end', align:'end', color:mob?'#3c4a43':'#555',
-          font:{size:mob?11:10.5, weight:mob?'700':'400'},
-          formatter:v=>mob?lvShort(v):((v/1e6).toFixed(1)+'M')}
+        tooltip:Object.assign({}, LV_TIP, {callbacks:{label:c=>{ const a=D[c.dataIndex];
+          const r=['Giá trị: '+fmt(a.v)+' đ']; if(a.q!=null) r.push('Số lượng: '+a.q.toLocaleString('vi-VN')+' cp'+(a.wft?' (gồm '+a.wft.toLocaleString('vi-VN')+' cp chờ về)':''));
+          return r; }}}),
+        datalabels:{display:true, labels:{
+          gt:{display:true, anchor:'end', align:'end', color:mob?'#3c4a43':'#555', font:{size:mob?11:10.5, weight:mob?'700':'500'},
+              formatter:(v,c)=>{ const a=D[c.dataIndex]; return lvShort(v)+(a&&a.q!=null&&!vuaTrong(c)?' · '+slTxt(a):''); }},
+          sl:{anchor:'start', align:'end', offset:4, clamp:true, color:mob?'#fff':'#2f3a35', font:{size:mob?11:10.5, weight:'700'},
+              display:c=>vuaTrong(c), formatter:(v,c)=>slTxt(D[c.dataIndex])}
+        }}
       }
     }
   };
-  if(stocksChart){stocksChart.data=cfg.data; stocksChart.update();} else stocksChart=new Chart(ctx,cfg);
+  stocksChart=new Chart(ctx,cfg);
 }
 
 /* ================= RENDER: daily interest line ================= */
@@ -1567,13 +1610,32 @@ function renderInterest(rows){
   renderUpdatePage();
   const ptsAll=[...byDate.entries()].sort((a,b)=>a[0]-b[0]);
   renderRevenue(ptsAll);
+  __intPts=ptsAll;
+  drawInterest();
+}
+/* Đường lãi vay: chọn 3 tháng / 6 tháng / tất cả + phóng to (21/10/2026). Điện thoại mặc định 6 tháng. */
+let __intPts=[], intRange=null;
+function drawInterest(){
+  const ptsAll=__intPts; if(!ptsAll.length) return;
   const mob = lvMobile();
-  const pts = mob ? ptsAll.slice(-120) : ptsAll;   // mobile: ~6 tháng gần nhất
+  if(intRange==null){ intRange = mob ? 180 : 0;
+    document.querySelectorAll('#intRanges button').forEach(x=>x.classList.toggle('active', +x.dataset.r===intRange)); }
+  const cut = intRange>0 ? ptsAll[ptsAll.length-1][0] - intRange*86400000 : -Infinity;
+  const pts = ptsAll.filter(p=>p[0]>=cut);
+  const ngan = intRange>0 && intRange<=100;          // 3 tháng: ghi nhãn theo ngày đầu tuần cho dễ đọc
+  /* Nhãn tháng không chồng nhau: mỗi nhãn cần ~72px (điện thoại ~34px) -> cách bao nhiêu tháng ghi một nhãn */
+  const rongW = (document.getElementById('interestChart').parentElement.clientWidth || 600);
+  const soThang = pts.length ? Math.max(1, Math.round((pts[pts.length-1][0]-pts[0][0])/(30.4*86400000))) : 1;
+  const buocT = Math.max(1, Math.ceil(soThang / Math.max(1, Math.floor(rongW/(mob?34:72)))));
   let prevM=-1;
+  let prevW=-1;
   const labels=pts.map(([t])=>{
     const d=new Date(t);
+    if(ngan){ const w=Math.floor((t/86400000+3)/7); if(w!==prevW && (w%2===0)){ prevW=w; return d.getDate()+'/'+(d.getMonth()+1); } prevW=w; return ''; }
     if(d.getMonth()!==prevM && d.getDate()<=7){
       prevM=d.getMonth();
+      const mi=d.getFullYear()*12+d.getMonth();
+      if(mi % buocT !== 0) return '';
       return mob ? ('T'+(d.getMonth()+1)) : (MONTHS[d.getMonth()]+' '+d.getFullYear());
     }
     prevM=d.getMonth(); return '';
@@ -1603,8 +1665,23 @@ function renderInterest(rows){
           label:c=>'Lãi vay: '+fmt(c.raw)+' đ'}})}
     }
   };
-  if(interestChart){interestChart.data=cfg.data; interestChart.update();} else interestChart=new Chart(ctx,cfg);
+  if(interestChart){ interestChart.destroy(); }
+  interestChart=new Chart(ctx,cfg);
 }
+document.querySelectorAll('#intRanges button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#intRanges button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); intRange=+b.dataset.r; drawInterest();
+}));
+function lvIntZoom(on){
+  const box=document.getElementById('interestBox'), btn=document.getElementById('intZoom'); if(!box) return;
+  const bat = on==null ? !box.classList.contains('lv-full') : on;
+  box.classList.toggle('lv-full', bat); document.body.classList.toggle('lv-full-on', bat);
+  if(btn) btn.textContent = bat ? '✕ Thu nhỏ' : '⤢ Phóng to';
+  setTimeout(()=>{ drawInterest(); }, 30);
+}
+document.getElementById('intZoom').addEventListener('click',()=>lvIntZoom());
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') lvIntZoom(false); });
+document.addEventListener('click',e=>{ if(document.body.classList.contains('lv-full-on') && !e.target.closest('#interestBox')) lvIntZoom(false); });
 
 /* ================= RENDER: monthly trade bars ================= */
 let tradeChart;
@@ -1793,6 +1870,7 @@ function renderInsight(rows){
       cur:cellNum(r[28])||cellNum(r[27]), mark:cellStr(r[29])});
   }
   renderHoldings(deals);
+  renderStocksKeyIn(deals);
   buildHistory(deals);
   setupCustomerPage(custRows);
   /* KPI deal đang mở */
@@ -2029,6 +2107,7 @@ function loadAPI(rows){ // sheet API: A=mã, C=giá real-time
   }
   renderCustomerPage();
   renderUpdatePage();
+  renderStocksKeyIn();
 }
 let __listNames=[];
 function load5bil(rows){ // danh sách khách chuẩn: sheet "5 bil" cột B, từ C.P trở xuống
@@ -3113,7 +3192,7 @@ if(authValid()) start();
     var m = [['stocksBox', 'Giá trị nắm giữ theo mã'], ['interestBox', 'Lãi vay theo ngày']];
     m.forEach(function(x){
       var h = document.querySelector('#' + x[0] + ' h4');
-      if (h && h.dataset.vi !== '1'){ h.dataset.vi = '1'; h.textContent = x[1]; }
+      if (h && h.dataset.vi !== '1'){ h.dataset.vi = '1'; if (h.firstChild && h.firstChild.nodeType === 3) h.firstChild.nodeValue = x[1] + ' '; else h.textContent = x[1]; }
     });
     var tb = document.querySelector('#page-performance .chart-box');
     if (tb && !tb.querySelector('h4')){
