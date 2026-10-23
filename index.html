@@ -1690,10 +1690,19 @@ const TRADE_WIN = 12;
 function renderTradeChart(rows){
   if (rows) __tradeRows = rows; else rows = __tradeRows;
   if (!rows) return;
-  const all=rows.slice(1)
-    .filter(r=>parseMDY(r[0]))
-    .map(r=>({d:parseMDY(r[0]), buy:num(r[1]), sell:num(r[2]), trade:num(r[3])}))
-    .sort((a,b)=>a.d-b.d);
+  /* 23/10/2026: HQKD có dòng tháng mới nhưng công thức chưa ra số (10/2026 trống) -> cộng thẳng từ Trans_All
+     (khớp HQKD tới từng đồng cả 24 tháng 10/2024–9/2026). Trans_All chưa tải / lỗi thì dùng HQKD như cũ. */
+  const thang={};
+  rows.slice(1).forEach(r=>{ const d=parseMDY(r[0]); if(!d) return;
+    thang[d.getFullYear()*12+d.getMonth()]={d:new Date(d.getFullYear(),d.getMonth(),1), buy:num(r[1]), sell:num(r[2])}; });
+  if(allTrans.length){
+    const tr={};
+    for(const t of allTrans){ const k=t.d.getFullYear()*12+t.d.getMonth();
+      const a=tr[k]=tr[k]||{d:new Date(t.d.getFullYear(),t.d.getMonth(),1), buy:0, sell:0};
+      if(t.side==='BUY') a.buy+=t.value; else a.sell+=t.value; }
+    Object.assign(thang, tr);
+  }
+  const all=Object.values(thang).map(x=>({...x, trade:x.buy+x.sell})).sort((a,b)=>a.d-b.d);
 
   /* Mobile: chỉ vẽ 12 tháng một lần, bấm ‹ › để xem quá khứ */
   const mob = lvMobile();
@@ -1816,6 +1825,7 @@ function loadTrans(rows){
               side:cellStr(r[3]).toUpperCase(), vol:cellNum(r[4]), price:cellNum(r[5]), value:cellNum(r[6])}))
     .filter(t=>t.d && t.cust && t.ticker && t.ticker!=='-' && t.value>0 && (t.side==='BUY'||t.side==='SELL'));
   renderTransTables();
+  renderTradeChart();
   renderCustomerPage();
   /* Trans_All về sau khi trang KH Update đã vẽ -> vẽ lại riêng phần giao dịch hôm nay */
   try { const u=document.getElementById('uSel'); if(u&&u.value) renderUpdateTrades(u.value); } catch(e){}
