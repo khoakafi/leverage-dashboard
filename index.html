@@ -2390,16 +2390,21 @@ function renderNavChart(hist){
   const cfg={type:'line',
     data:{labels:pts.map(h=>String(h.d.getDate()).padStart(2,'0')+'/'+String(h.d.getMonth()+1).padStart(2,'0')),
       datasets:[{data:pts.map(h=>h.nav),borderColor:GREEN,borderWidth:2,pointRadius:0,tension:.35,
+        pointHoverRadius:5,pointHoverBackgroundColor:GREEN,pointHoverBorderColor:'#fff',pointHoverBorderWidth:2,
         fill:true,backgroundColor:'rgba(24,160,72,.10)'}]},
-    options:{maintainAspectRatio:false,responsive:true,
+    /* 27/10/2026: điểm vẽ bán kính 0 + mặc định phải chạm trúng điểm -> bấm/rê không ra số. Chạm đâu cũng hiện NAV ngày gần nhất. */
+    options:{maintainAspectRatio:false,responsive:true,interaction:LV_TOUCH,
       scales:{x:{grid:{display:false},border:{display:false},
           ticks:{color:'#888',font:{size:10.5},maxRotation:0,autoSkip:true,maxTicksLimit:14}},
         y:{beginAtZero:true,grid:{color:'#F0F0F0'},border:{display:false},
           ticks:{color:'#888',font:{size:10.5},callback:v=>v.toLocaleString('vi-VN')}}},
       plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:c=>fmt(c.raw)+' đ'}},
+        tooltip:Object.assign({}, LV_TIP, {displayColors:false, callbacks:{
+          title:it=>{const d=pts[it[0].dataIndex].d;return 'Ngày '+String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();},
+          label:c=>'NAV: '+fmt(c.raw)+' đ',
+          afterLabel:c=>{const i=c.dataIndex;if(!i)return '';const d=c.raw-pts[i-1].nav;return (d>=0?'▲ +':'▼ −')+fmt(Math.abs(d))+' đ so với ngày trước';}}}),
         datalabels:{display:false}}}};
-  if(cuNavChart){cuNavChart.data=cfg.data;cuNavChart.update();}else cuNavChart=new Chart(ctx,cfg);
+  if(cuNavChart){cuNavChart.data=cfg.data;cuNavChart.options=cfg.options;cuNavChart.update();}else cuNavChart=new Chart(ctx,cfg);
 }
 document.querySelectorAll('#cuRanges button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('#cuRanges button').forEach(x=>x.classList.remove('active'));
