@@ -103,6 +103,8 @@
   tfoot td:first-child{text-align:left;}
   #custTableWrap{max-height:305px;}
   .kh-lai{display:inline-block;margin-left:7px;font-size:11.5px;font-weight:700;color:#127A3B;background:#E9F6EE;border-radius:999px;padding:1px 8px;vertical-align:1px;}
+  .kh-laisai{display:inline-block;background:#FFF4E5;color:#B45309;font-weight:800;border-radius:6px;padding:1px 7px;cursor:help;}
+  .kh-laisai small{display:block;font-size:10.5px;font-weight:600;color:#B45309;}
   .kh-lech{display:inline-block;background:#FDECEC;color:#C62828;font-weight:800;border-radius:6px;padding:2px 8px;}
   /* ===== charts area ===== */
   .charts{display:flex;gap:20px;margin-top:12px;}
@@ -1477,6 +1479,12 @@ function loadLaiHD(rows){
     const v=cellNum(r[2])>0?cellNum(r[2]):cellNum(r[1]); if(v>0) __laiKH[n]=v; }
   if(__ovCust.length) renderCustTable();
 }
+/* 10/11/2026: lãi/ngày ở tab "Khách Hàng - Nợ" (cột E) phải = Dư nợ × lãi HĐ (Overview) ÷ 365.
+   Quyên, Sếp Phát 02 vẫn ra 12,5% dù Overview đã 11% -> tô cam để thấy ngay (chỉ hiển thị, không sửa số của Sheet). */
+function khLaiHD(n){ const v=(__laiKH[n]>0)?__laiKH[n]:0; return v>0?(v<=1?v:v/100):0; }
+function khLaiSai(d){ const r=khLaiHD(d.name); if(!(r>0)||!(d.debt>0)||!(d.intr>0)) return null;
+  const ky=d.debt*r/365; if(Math.abs(d.intr-ky)<=Math.max(2000,ky*0.01)) return null;
+  return {ky, ngam:d.intr*365/d.debt}; }
 function renderCustTable(){
   const {k,dir}=__ovSort;
   const data=[...__ovCust].sort((a,b)=>
@@ -1485,16 +1493,17 @@ function renderCustTable(){
   const tb = document.querySelector('#custTable tbody');
   tb.innerHTML = data.map(d=>`<tr>
       <td>${d.name}${khLaiTxt(d.name)?`<span class="kh-lai">${khLaiTxt(d.name)}</span>`:''}</td><td>${fmt(d.nav)}</td><td>${fmt(d.debt)}</td><td>${fmt(d.port)}</td>
-      <td>${fmt(d.intr)}</td><td>${deltaHtml(d.delta)}</td><td>${Math.round(d.rate)}%</td>
+      <td>${(()=>{const x=khLaiSai(d); return x?`<span class="kh-laisai" title="Sheet tính theo ${(x.ngam*100).toFixed(2)}%/năm · theo lãi HĐ ${khLaiTxt(d.name)} phải là ${fmt(Math.round(x.ky))}">${fmt(d.intr)}<small>đang tính ${(Math.round(x.ngam*1000)/10).toString().replace('.',',')}% · HĐ ${khLaiTxt(d.name)}</small></span>`:fmt(d.intr);})()}</td><td>${deltaHtml(d.delta)}</td><td>${Math.round(d.rate)}%</td>
       <td>${Math.abs(d.lech)>=KH_LECH_NGUONG?`<span class="kh-lech">${fmt(d.lech)}</span>`:''}</td>
     </tr>`).join('');
   const nLech = data.filter(d=>Math.abs(d.lech)>=KH_LECH_NGUONG).length;
+  const nLaiSai = data.filter(d=>khLaiSai(d)).length;
 
   const t = data.reduce((a,d)=>({nav:a.nav+d.nav, debt:a.debt+d.debt, port:a.port+d.port, intr:a.intr+d.intr}),
                         {nav:0,debt:0,port:0,intr:0});
   document.querySelector('#custTable tfoot').innerHTML =
     `<tr><td>Total</td><td>${fmt(t.nav)}</td><td>${fmt(t.debt)}</td><td>${fmt(t.port)}</td>
-     <td>${fmt(t.intr)}</td><td></td><td></td><td>${nLech?`<span class="kh-lech">${nLech} KH lệch</span>`:''}</td></tr>`;
+     <td>${fmt(t.intr)}${nLaiSai?`<br><span class="kh-laisai">${nLaiSai} KH lãi chưa theo HĐ</span>`:''}</td><td></td><td></td><td>${nLech?`<span class="kh-lech">${nLech} KH lệch</span>`:''}</td></tr>`;
 
   document.querySelectorAll('#custTable th.sth').forEach(th=>{
     th.querySelector('.arr').textContent = th.dataset.k===k ? (dir<0?'▼':'▲') : '⇅';
