@@ -1479,12 +1479,15 @@ function loadLaiHD(rows){
     const v=cellNum(r[2])>0?cellNum(r[2]):cellNum(r[1]); if(v>0) __laiKH[n]=v; }
   if(__ovCust.length) renderCustTable();
 }
-/* 10/11/2026: lãi/ngày ở tab "Khách Hàng - Nợ" (cột E) phải = Dư nợ × lãi HĐ (Overview) ÷ 365.
-   Quyên, Sếp Phát 02 vẫn ra 12,5% dù Overview đã 11% -> tô cam để thấy ngay (chỉ hiển thị, không sửa số của Sheet). */
+/* So lãi đang tính (Khách Hàng - Nợ) với Overview: lệch > 1% thì chip có ghi chú "Overview đang ghi …". */
 function khLaiHD(n){ const v=(__laiKH[n]>0)?__laiKH[n]:0; return v>0?(v<=1?v:v/100):0; }
 function khLaiSai(d){ const r=khLaiHD(d.name); if(!(r>0)||!(d.debt>0)||!(d.intr>0)) return null;
   const ky=d.debt*r/365; if(Math.abs(d.intr-ky)<=Math.max(2000,ky*0.01)) return null;
   return {ky, ngam:d.intr*365/d.debt}; }
+/* 10/11/2026 (anh Khoa): số % cạnh tên = lãi ĐANG TÍNH THẬT = Total Interest × 365 ÷ Total Debt (tab "Khách Hàng - Nợ").
+   Quyên, Sếp Phát 02 đã tăng 12,5% nhưng Overview (cột Update) vẫn ghi 11% -> chip cũ hiện sai. Không có dư nợ thì mới lấy Overview. */
+function khLaiThat(d){ if(!(d.debt>0)||!(d.intr>0)) return khLaiTxt(d.name);
+  const p=Math.round(d.intr*365/d.debt*1000)/10; return p+'%'; }
 function renderCustTable(){
   const {k,dir}=__ovSort;
   const data=[...__ovCust].sort((a,b)=>
@@ -1492,18 +1495,17 @@ function renderCustTable(){
 
   const tb = document.querySelector('#custTable tbody');
   tb.innerHTML = data.map(d=>`<tr>
-      <td>${d.name}${khLaiTxt(d.name)?`<span class="kh-lai">${khLaiTxt(d.name)}</span>`:''}</td><td>${fmt(d.nav)}</td><td>${fmt(d.debt)}</td><td>${fmt(d.port)}</td>
-      <td>${(()=>{const x=khLaiSai(d); return x?`<span class="kh-laisai" title="Sheet tính theo ${(x.ngam*100).toFixed(2)}%/năm · theo lãi HĐ ${khLaiTxt(d.name)} phải là ${fmt(Math.round(x.ky))}">${fmt(d.intr)}<small>đang tính ${(Math.round(x.ngam*1000)/10).toString().replace('.',',')}% · HĐ ${khLaiTxt(d.name)}</small></span>`:fmt(d.intr);})()}</td><td>${deltaHtml(d.delta)}</td><td>${Math.round(d.rate)}%</td>
+      <td>${d.name}${khLaiThat(d)?`<span class="kh-lai"${khLaiSai(d)?` title="Overview (cột Update) đang ghi ${khLaiTxt(d.name)}"`:''}>${khLaiThat(d)}</span>`:''}</td><td>${fmt(d.nav)}</td><td>${fmt(d.debt)}</td><td>${fmt(d.port)}</td>
+      <td>${fmt(d.intr)}</td><td>${deltaHtml(d.delta)}</td><td>${Math.round(d.rate)}%</td>
       <td>${Math.abs(d.lech)>=KH_LECH_NGUONG?`<span class="kh-lech">${fmt(d.lech)}</span>`:''}</td>
     </tr>`).join('');
   const nLech = data.filter(d=>Math.abs(d.lech)>=KH_LECH_NGUONG).length;
-  const nLaiSai = data.filter(d=>khLaiSai(d)).length;
 
   const t = data.reduce((a,d)=>({nav:a.nav+d.nav, debt:a.debt+d.debt, port:a.port+d.port, intr:a.intr+d.intr}),
                         {nav:0,debt:0,port:0,intr:0});
   document.querySelector('#custTable tfoot').innerHTML =
     `<tr><td>Total</td><td>${fmt(t.nav)}</td><td>${fmt(t.debt)}</td><td>${fmt(t.port)}</td>
-     <td>${fmt(t.intr)}${nLaiSai?`<br><span class="kh-laisai">${nLaiSai} KH lãi chưa theo HĐ</span>`:''}</td><td></td><td></td><td>${nLech?`<span class="kh-lech">${nLech} KH lệch</span>`:''}</td></tr>`;
+     <td>${fmt(t.intr)}</td><td></td><td></td><td>${nLech?`<span class="kh-lech">${nLech} KH lệch</span>`:''}</td></tr>`;
 
   document.querySelectorAll('#custTable th.sth').forEach(th=>{
     th.querySelector('.arr').textContent = th.dataset.k===k ? (dir<0?'▼':'▲') : '⇅';
